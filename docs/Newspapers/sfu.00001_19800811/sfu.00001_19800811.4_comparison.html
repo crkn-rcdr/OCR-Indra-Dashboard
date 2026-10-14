@@ -1,0 +1,1187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CRKN OCR Comparison: sfu.00001_19800811.4</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #1a1e24; color: #e1e4e8; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+  header { background: #24292e; border-bottom: 1px solid #30363d; padding: 10px 18px; display: flex; justify-content: space-between; align-items: center; z-index: 10; gap: 12px; }
+  
+  .nav-left { display: flex; align-items: center; gap: 8px; font-size: 0.88rem; }
+  .nav-btn-back { background: #21262d; color: #58a6ff; border: 1px solid #30363d; padding: 5px 12px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 0.82rem; transition: all 0.15s ease; }
+  .nav-btn-back:hover { background: #30363d; color: #79c0ff; border-color: #58a6ff; }
+  .nav-sep { color: #484f58; }
+  .nav-coll { color: #8b949e; font-weight: 500; font-size: 0.84rem; }
+  h1 { font-size: 1.05rem; font-weight: 600; color: #f0f6fc; }
+  
+  .nav-center { display: flex; align-items: center; gap: 6px; }
+  .nav-page-btn { background: #21262d; color: #c9d1d9; border: 1px solid #30363d; padding: 4px 10px; border-radius: 4px; text-decoration: none; font-size: 0.8rem; font-weight: 500; }
+  .nav-page-btn:hover:not(.disabled) { background: #30363d; color: #58a6ff; border-color: #58a6ff; }
+  .nav-page-btn.disabled { opacity: 0.4; cursor: not-allowed; }
+  .page-current { font-size: 0.82rem; color: #8b949e; padding: 0 4px; }
+  
+  .badges { display: flex; gap: 8px; font-size: 0.8rem; align-items: center; }
+  .badge { padding: 4px 8px; border-radius: 4px; font-weight: 600; background: #30363d; }
+  .badge.success { background: #198754; color: #fff; }
+  .badge.warning { background: #d97706; color: #fff; }
+  .badge.info { background: #0284c7; color: #fff; }
+  .badge.qa-win { background: #238636; color: #fff; }
+  .badge.qa-loss { background: #8957e5; color: #fff; }
+  
+  .controls { background: #212529; border-bottom: 1px solid #30363d; padding: 8px 18px; display: flex; gap: 14px; align-items: center; font-size: 0.84rem; flex-wrap: wrap; }
+  .controls label { display: flex; align-items: center; gap: 5px; cursor: pointer; }
+  .controls select, .controls input[type="range"] { vertical-align: middle; }
+  .slider-group { display: flex; align-items: center; gap: 6px; }
+  
+  .main-container { display: flex; flex: 1; overflow: hidden; position: relative; min-height: 0; }
+  .viewers-container { display: flex; flex: 1; overflow: hidden; position: relative; min-height: 0; }
+  
+  .panel { flex: 1; height: 100%; position: relative; overflow: hidden; border-right: 1px solid #30363d; background: #121519; cursor: grab; min-height: 0; }
+  .panel:active { cursor: grabbing; }
+  .panel-header { position: absolute; top: 10px; left: 10px; z-index: 5; background: rgba(0, 0, 0, 0.75); padding: 4px 10px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; pointer-events: none; }
+  
+  .canvas-stage { position: absolute; top: 0; left: 0; transform-origin: 0 0; width: 7449.0px; height: 5247.0px; }
+  .page-image { position: absolute; top: 0; left: 0; width: 7449.0px; height: 5247.0px; display: block; user-select: none; pointer-events: none; transition: opacity 0.1s ease; }
+  .overlay-svg { position: absolute; top: 0; left: 0; width: 7449.0px; height: 5247.0px; pointer-events: auto; }
+  
+  rect.agree { fill: rgba(40, 167, 69, 0.25); stroke: #28a745; stroke-width: 1.5; cursor: pointer; }
+  rect.discrepancy { fill: rgba(245, 158, 11, 0.35); stroke: #f59e0b; stroke-width: 2; cursor: pointer; }
+  rect.p-only { fill: rgba(56, 189, 248, 0.35); stroke: #38bdf8; stroke-width: 1.5; cursor: pointer; }
+  rect.b-only { fill: rgba(239, 68, 68, 0.35); stroke: #ef4444; stroke-width: 1.5; cursor: pointer; }
+  rect:hover { fill-opacity: 0.7; stroke-width: 2.5; }
+  
+  /* Selected / Highlighted active word - completely transparent interior */
+  rect.highlighted {
+    stroke: #00ffff !important;
+    stroke-width: 4 !important;
+    fill: none !important;
+    filter: drop-shadow(0 0 6px #00ffff);
+    vector-effect: non-scaling-stroke;
+  }
+  
+  .sidebar { width: 370px; background: #1f242c; border-left: 1px solid #30363d; display: flex; flex-direction: column; }
+  .sidebar-header { padding: 10px 14px; font-weight: 600; border-bottom: 1px solid #30363d; font-size: 0.88rem; background: #24292e; display: flex; justify-content: space-between; align-items: center; }
+  
+  /* Pinned Inspector / Adjudicator Panel */
+  .inspector-panel {
+    background: #161b22;
+    border-bottom: 2px solid #30363d;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    transition: all 0.2s ease;
+  }
+  .inspector-panel.empty {
+    padding: 14px 12px;
+    color: #8b949e;
+    font-size: 0.78rem;
+    text-align: center;
+    background: #181c24;
+  }
+  .inspector-hint {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: #8b949e;
+  }
+  .inspector-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.78rem;
+    color: #c9d1d9;
+  }
+  .inspector-title {
+    font-weight: 600;
+    color: #58a6ff;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .inspector-metrics {
+    color: #8b949e;
+    font-size: 0.74rem;
+  }
+  .inspector-nav {
+    display: flex;
+    gap: 4px;
+  }
+  .inspector-nav button {
+    background: #21262d;
+    color: #c9d1d9;
+    border: 1px solid #30363d;
+    border-radius: 3px;
+    padding: 1px 7px;
+    font-size: 0.72rem;
+    cursor: pointer;
+  }
+  .inspector-nav button:hover {
+    background: #30363d;
+    color: #58a6ff;
+  }
+  
+  .inspector-compare {
+    background: #0d1117;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    padding: 6px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 0.8rem;
+  }
+  .insp-row {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    word-break: break-all;
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 4px;
+    transition: background 0.1s ease;
+  }
+  .insp-row:hover {
+    background: rgba(255, 255, 255, 0.05);
+  }
+  .insp-engine {
+    font-size: 0.72rem;
+    font-weight: 600;
+    min-width: 74px;
+  }
+  .insp-row.p-row .insp-engine { color: #f59e0b; }
+  .insp-row.p-row .insp-text { color: #f0f6fc; font-weight: 600; }
+  .insp-row.b-row .insp-engine { color: #ef4444; }
+  .insp-row.b-row .insp-text { color: #f0f6fc; font-weight: 600; }
+  
+  .inspector-prompt {
+    font-size: 0.74rem;
+    color: #8b949e;
+    font-weight: 500;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .inspector-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+  .adj-btn {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 8px;
+    font-size: 0.76rem;
+    font-weight: 600;
+    border-radius: 5px;
+    border: 1px solid #30363d;
+    background: #21262d;
+    cursor: pointer;
+    transition: all 0.12s ease;
+  }
+  .adj-btn .adj-key {
+    font-size: 0.65rem;
+    padding: 1px 4px;
+    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.1);
+    color: #8b949e;
+  }
+  .adj-btn.btn-paddle { color: #3fb950; }
+  .adj-btn.btn-paddle:hover, .adj-btn.btn-paddle.active {
+    background: rgba(35, 134, 54, 0.35);
+    border-color: #3fb950;
+    box-shadow: 0 0 6px rgba(63, 185, 80, 0.4);
+  }
+  .adj-btn.btn-paddle.active .adj-key {
+    background: #238636;
+    color: #fff;
+  }
+  .adj-btn.btn-abbyy { color: #f85149; }
+  .adj-btn.btn-abbyy:hover, .adj-btn.btn-abbyy.active {
+    background: rgba(218, 54, 51, 0.35);
+    border-color: #f85149;
+    box-shadow: 0 0 6px rgba(248, 81, 73, 0.4);
+  }
+  .adj-btn.btn-abbyy.active .adj-key {
+    background: #da3633;
+    color: #fff;
+  }
+  .adj-btn.btn-both { color: #58a6ff; }
+  .adj-btn.btn-both:hover, .adj-btn.btn-both.active {
+    background: rgba(56, 139, 253, 0.3);
+    border-color: #58a6ff;
+    box-shadow: 0 0 6px rgba(88, 166, 255, 0.4);
+  }
+  .adj-btn.btn-both.active .adj-key {
+    background: #1f6feb;
+    color: #fff;
+  }
+  .adj-btn.btn-neither { color: #8b949e; }
+  .adj-btn.btn-neither:hover, .adj-btn.btn-neither.active {
+    background: rgba(110, 118, 129, 0.3);
+    border-color: #8b949e;
+    box-shadow: 0 0 6px rgba(139, 148, 158, 0.4);
+  }
+  .adj-btn.btn-neither.active .adj-key {
+    background: #484f58;
+    color: #fff;
+  }
+  .inspector-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.72rem;
+    color: #8b949e;
+    padding-top: 2px;
+  }
+  .insp-status.manual {
+    color: #58a6ff;
+    font-weight: 600;
+  }
+  .btn-reset-word {
+    background: none;
+    border: none;
+    color: #8b949e;
+    text-decoration: underline;
+    cursor: pointer;
+    font-size: 0.7rem;
+    padding: 0;
+  }
+  .btn-reset-word:hover { color: #f85149; }
+
+  .sidebar-filter-bar { padding: 8px 12px; background: #181b20; border-bottom: 1px solid #30363d; display: flex; gap: 8px; align-items: center; }
+  .filter-dropdown { background: #21262d; color: #c9d1d9; border: 1px solid #30363d; border-radius: 4px; padding: 4px 8px; font-size: 0.8rem; width: 100%; }
+  .sidebar-list { flex: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+  
+  .card { background: #282e38; border: 1px solid #374151; border-radius: 6px; padding: 8px 10px; font-size: 0.82rem; cursor: pointer; transition: all 0.15s ease; }
+  .card:hover { border-color: #60a5fa; background: #2d3542; }
+  .card.active {
+    border-color: #00ffff !important;
+    background: #1e3a4f !important;
+    box-shadow: 0 0 10px rgba(0, 255, 255, 0.4);
+  }
+  .card-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+  .card-diff { font-weight: bold; color: #f59e0b; word-break: break-all; }
+  .card-label { color: #9ca3af; font-size: 0.75rem; }
+  
+  .card-quick-actions {
+    display: flex;
+    gap: 4px;
+    margin-top: 6px;
+    padding-top: 5px;
+    border-top: 1px solid #374151;
+  }
+  .chip-btn {
+    flex: 1;
+    padding: 2px 4px;
+    font-size: 0.68rem;
+    font-weight: 600;
+    border-radius: 3px;
+    border: 1px solid #30363d;
+    background: #21262d;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.1s ease;
+  }
+  .chip-btn.chip-p { color: #3fb950; }
+  .chip-btn.chip-p:hover, .chip-btn.chip-p.active { background: rgba(35, 134, 54, 0.35); border-color: #3fb950; }
+  .chip-btn.chip-b { color: #f85149; }
+  .chip-btn.chip-b:hover, .chip-btn.chip-b.active { background: rgba(218, 54, 51, 0.35); border-color: #f85149; }
+  .chip-btn.chip-both { color: #58a6ff; }
+  .chip-btn.chip-both:hover, .chip-btn.chip-both.active { background: rgba(56, 139, 253, 0.25); border-color: #58a6ff; }
+  .chip-btn.chip-neither { color: #8b949e; }
+  .chip-btn.chip-neither:hover, .chip-btn.chip-neither.active { background: rgba(110, 118, 129, 0.25); border-color: #8b949e; }
+  
+  .verdict-tag { font-size: 0.7rem; font-weight: 600; padding: 2px 6px; border-radius: 3px; }
+  .verdict-tag.paddle-win { background: rgba(35, 134, 54, 0.25); color: #3fb950; border: 1px solid #238636; }
+  .verdict-tag.abbyy-win { background: rgba(218, 54, 51, 0.25); color: #f85149; border: 1px solid #da3633; }
+  .verdict-tag.both-valid { background: rgba(56, 139, 253, 0.2); color: #58a6ff; border: 1px solid #1f6feb; }
+  .verdict-tag.neither-valid { background: rgba(110, 118, 129, 0.2); color: #8b949e; border: 1px solid #484f58; }
+  .verdict-tag.manual {
+    box-shadow: 0 0 5px rgba(88, 166, 255, 0.6);
+  }
+  
+  .legend { display: flex; gap: 12px; font-size: 0.78rem; align-items: center; }
+  .legend-item { display: flex; align-items: center; gap: 5px; }
+  .legend-color { width: 12px; height: 12px; border-radius: 2px; }
+</style>
+</head>
+<body>
+<header>
+  <div class="nav-left">
+    <a href="../../index.html" class="nav-btn-back">← Master Dashboard</a>
+    <span class="nav-sep">/</span>
+    <span class="nav-coll">Newspapers/sfu.00001_19800811</span>
+    <span class="nav-sep">/</span>
+    <h1>sfu.00001_19800811.4</h1>
+  </div>
+  <div class="nav-center">
+    <a href="sfu.00001_19800811.3_comparison.html" class="nav-page-btn">‹ Previous</a>
+    <span class="page-current">sfu.00001_19800811.4</span>
+    <a href="sfu.00001_19800811.5_comparison.html" class="nav-page-btn">Next ›</a>
+  </div>
+  <div class="badges">
+    <div class="badge info" title="Detected Document Language">Lang: EN</div>
+    <div class="badge success" title="Recognized words: Pipeline 630 vs Benchmark 180 (+250.0% recall advantage)">Words: 630 P / 180 B (+250.0%)</div>
+    <div class="badge success" title="Text Concordance (Cleaned)">Concordance: 0.0%</div>
+    <div class="badge qa-loss" id="badgeQaWinRate" title="Indra 12 wins vs ABBYY 24 wins on disputed words">Indra QA Win Rate: 33.33%</div>
+    <div class="badge info" title="Spatial IoU Alignment Rate">IoU Match: 11.11%</div>
+    <div class="badge warning" id="badgeTopDiffs" title="Discrepant words count">Diffs: 70</div>
+  </div>
+</header>
+
+<div class="controls">
+  <label><input type="checkbox" id="chkAgree" checked> Concordant (Green)</label>
+  <label><input type="checkbox" id="chkDiff" checked> Discrepancies (Orange)</label>
+  <label><input type="checkbox" id="chkOnly" checked> Engine-Only (Blue/Red)</label>
+  
+  <span style="border-left: 1px solid #444c56; height: 18px; margin: 0 4px;"></span>
+  
+  <label><input type="checkbox" id="chkBgImage" checked> Background Image</label>
+  <div class="slider-group">
+    <span style="color:#9ca3af;font-size:0.8rem;">Opacity:</span>
+    <input type="range" id="rngOpacity" min="0" max="100" value="85" style="width: 90px; cursor: pointer;">
+    <span id="lblOpacity" style="font-size:0.8rem; width: 32px;">85%</span>
+  </div>
+  
+  <button id="btnResetView" style="background:#3b82f6;color:#fff;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;margin-left:8px;">Reset View</button>
+  <span style="flex:1;"></span>
+  <div class="legend">
+    <div class="legend-item"><div class="legend-color" style="background:#28a745;"></div> Agreed</div>
+    <div class="legend-item"><div class="legend-color" style="background:#f59e0b;"></div> Discrepancy</div>
+    <div class="legend-item"><div class="legend-color" style="background:#38bdf8;"></div> Pipeline Only</div>
+    <div class="legend-item"><div class="legend-color" style="background:#ef4444;"></div> ABBYY Only</div>
+    <div class="legend-item"><div class="legend-color" style="background:#00ffff;"></div> Selected</div>
+  </div>
+</div>
+
+<div class="main-container">
+  <div class="viewers-container">
+    <!-- Pipeline Panel (Left) -->
+    <div class="panel" id="panelLeft">
+      <div class="panel-header">Pipeline (Indra OCR) - 630 words</div>
+      <div class="canvas-stage" id="stageLeft">
+        <img class='page-image' id='imgLeft' src='sfu.00001_19800811.4.jpg' style='opacity:0.85;'>
+        <svg class="overlay-svg" id="svgLeft" viewBox="0 0 7449.0 5247.0"></svg>
+      </div>
+    </div>
+    
+    <!-- Benchmark Panel (Right) -->
+    <div class="panel" id="panelRight">
+      <div class="panel-header">Benchmark (ABBYY FineReader) - 180 words</div>
+      <div class="canvas-stage" id="stageRight">
+        <img class='page-image' id='imgRight' src='sfu.00001_19800811.4.jpg' style='opacity:0.85;'>
+        <svg class="overlay-svg" id="svgRight" viewBox="0 0 29796.0 20988.0"></svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- Discrepancy Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <div>
+        <span>Discrepancies</span>
+        <span class="badge warning" id="badgeSidebarDiffCount" style="font-size:0.75rem;padding:2px 6px;margin-left:4px;">70</span>
+        <span id="lblManualCount" style="display:none;font-size:0.72rem;color:#58a6ff;font-weight:600;margin-left:6px;"></span>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <button id="btnImportAdjudications" title="Import manual adjudications from JSON file" style="background:#21262d;color:#7ee787;border:1px solid #30363d;padding:2px 8px;border-radius:4px;font-size:0.72rem;cursor:pointer;font-weight:600;">Import JSON</button>
+        <button id="btnExportAdjudications" title="Export manual adjudications to JSON file" style="background:#21262d;color:#58a6ff;border:1px solid #30363d;padding:2px 8px;border-radius:4px;font-size:0.72rem;cursor:pointer;font-weight:600;">Export JSON</button>
+        <input type="file" id="fileImportAdjudications" accept=".json" style="display:none;" />
+      </div>
+    </div>
+
+    <!-- Pinned Adjudication Inspector -->
+    <div id="inspectorPanel" class="inspector-panel empty">
+      <div class="inspector-hint">
+        <span style="font-size:1.1rem;">🔍</span>
+        <span>Click any word box or card to select winner</span>
+      </div>
+    </div>
+
+    <div class="sidebar-filter-bar">
+      <select id="selFilterDiscrepancies" class="filter-dropdown">
+        <option value="all" id="optFilterAll">All Discrepancies (70)</option>
+        <option value="PADDLE_WIN" id="optFilterPaddle">Indra Wins (12)</option>
+        <option value="ABBYY_WIN" id="optFilterAbbyy">ABBYY Wins (24)</option>
+        <option value="BOTH_VALID" id="optFilterBoth">Both Valid (17)</option>
+        <option value="NEITHER_VALID" id="optFilterNeither">Neither Valid (17)</option>
+      </select>
+    </div>
+    <div class="sidebar-list" id="sidebarList"></div>
+  </div>
+</div>
+
+<script>
+  const pipelineName = "Indra OCR";
+  const pipelineShort = "Indra";
+  const matchedData = [{"idx": 0, "p_text": "280-886", "b_text": "2020886", "p_box": [0.6162840649751644, 0.4522965504097579, 0.05310779970465835, 0.009491137793024585], "b_box": [0.6159216002147939, 0.4513055079092815, 0.05356423681031011, 0.010672765389746522], "iou": 0.882, "clean_match": false, "exact_match": false, "sim": 0.571, "p_conf": 0.8583, "b_conf": 0.4048129618167877, "p_valid": true, "b_valid": true, "lexical_verdict": "BOTH_VALID", "manual_verdict": null}, {"idx": 1, "p_text": "26F8-8.89", "b_text": "2658289", "p_box": [0.6152772184185796, 0.4642652944539737, 0.05411464626124312, 0.00952925481227368], "b_box": [0.6157873540072493, 0.4627406136840099, 0.053698483017854744, 0.011435105774728416], "iou": 0.825, "clean_match": false, "exact_match": false, "sim": 0.556, "p_conf": 0.7778, "b_conf": 0.4592120945453644, "p_valid": false, "b_valid": true, "lexical_verdict": "ABBYY_WIN", "manual_verdict": null}, {"idx": 2, "p_text": "16P0-928", "b_text": "2600948", "p_box": [0.6023761578735402, 0.8780064798932723, 0.05185930997449322, 0.008347627215551743], "b_box": [0.6014230097999731, 0.8761196874404421, 0.052893005772586925, 0.011435105774728416], "iou": 0.716, "clean_match": false, "exact_match": false, "sim": 0.5, "p_conf": 0.812, "b_conf": 0.2880809009075165, "p_valid": false, "b_valid": true, "lexical_verdict": "ABBYY_WIN", "manual_verdict": null}, {"idx": 3, "p_text": "Ha", "b_text": "HD", "p_box": [0.6076430393341388, 0.9028587764436822, 0.012520741039065647, 0.008290451686678102], "b_box": [0.6014230097999731, 0.9010863350485993, 0.019465700093972346, 0.01162569087097389], "iou": 0.459, "clean_match": false, "exact_match": false, "sim": 0.5, "p_conf": 0.6505, "b_conf": 0.547788143157959, "p_valid": true, "b_valid": false, "lexical_verdict": "PADDLE_WIN", "manual_verdict": null}, {"idx": 4, "p_text": "10g", "b_text": "20100", "p_box": [0.502675392670157, 0.7793977510958643, 0.019176131024298562, 0.01097770154373928], "b_box": [0.48301785474560344, 0.7772060224890414, 0.09625453080950463, 0.014484467314655993], "iou": 0.151, "clean_match": false, "exact_match": false, "sim": 0.4, "p_conf": 0.5119, "b_conf": 0.22430936992168427, "p_valid": false, "b_valid": true, "lexical_verdict": "ABBYY_WIN", "manual_verdict": null}, {"idx": 5, "p_text": "09T", "b_text": "2050", "p_box": [0.24042153309169018, 0.4252906422717743, 0.02796348503154786, 0.009090909090909092], "b_box": [0.24150892737280172, 0.4246235944349152, 0.02617801047120419, 0.010101010101010102], "iou": 0.848, "clean_match": false, "exact_match": false, "sim": 0.25, "p_conf": 0.5848, "b_conf": 0.22898313403129578, "p_valid": false, "b_valid": true, "lexical_verdict": "ABBYY_WIN", "manual_verdict": null}, {"idx": 6, "p_text": "8089-88z-8TI", "b_text": "803283230", "p_box": [0.6012887635924286, 0.8910996760053365, 0.07908444086454558, 0.009224318658280922], "b_box": [0.6012887635924286, 0.8898418143701162, 0.07893677003624648, 0.01105393558223747], "iou": 0.833, "clean_match": false, "exact_match": false, "sim": 0.25, "p_conf": 0.8553, "b_conf": 0.2017575353384018, "p_valid": false, "b_valid": true, "lexical_verdict": "ABBYY_WIN", "manual_verdict": null}, {"idx": 7, "p_text": "T85-889-908", "b_text": "320020770", "p_box": [0.3835279903342731, 0.8194206213074138, 0.08030608135320177, 0.010310653706880122], "b_box": [0.3832729225399382, 0.8174194777968363, 0.08054772452678212, 0.01219744615971031], "iou": 0.825, "clean_match": false, "exact_match": false, "sim": 0.091, "p_conf": 0.8171, "b_conf": 0.21061404049396515, "p_valid": false, "b_valid": true, "lexical_verdict": "ABBYY_WIN", "manual_verdict": null}, {"idx": 8, "p_text": "0||||", "b_text": "\u4e8c\u2014#", "p_box": [0.510914216673379, 0.8720030493615398, 0.055457108336689494, 0.011149228130360206], "b_box": [0.5109410659148879, 0.8704021345530779, 0.05557792992347966, 0.013531541833428626], "iou": 0.821, "clean_match": false, "exact_match": false, "sim": 0.0, "p_conf": 0.577, "b_conf": 0.34074893593788147, "p_valid": true, "b_valid": true, "lexical_verdict": "BOTH_VALID", "manual_verdict": null}, {"idx": 9, "p_text": "d009", "b_text": "COAE", "p_box": [0.5518139347563432, 0.6746331236897275, 0.02748530004027386, 0.01025347817800648], "b_box": [0.5505436971405557, 0.6733371450352582, 0.02899718082964156, 0.012006861063464836], "iou": 0.809, "clean_match": false, "exact_match": false, "sim": 0.0, "p_conf": 0.6304, "b_conf": 0.19093827903270721, "p_valid": false, "b_valid": false, "lexical_verdict": "NEITHER_VALID", "manual_verdict": null}, {"idx": 10, "p_text": "Z410-428", "b_text": "101100", "p_box": [0.09144851657940664, 0.1049933295216314, 0.05047657403678346, 0.01610444063274252], "b_box": [0.09075043630017451, 0.10120068610634649, 0.05181903611222983, 0.02058319039451115], "iou": 0.762, "clean_match": false, "exact_match": false, "sim": 0.25, "p_conf": 0.6029, "b_conf": 0.18289446830749512, "p_valid": false, "b_valid": true, "lexical_verdict": "ABBYY_WIN", "manual_verdict": null}, {"idx": 11, "p_text": "H018", "b_text": "RAAS", "p_box": [0.5243285004698617, 0.6746331236897275, 0.02748530004027386, 0.01025347817800648], "b_box": [0.5215465163109142, 0.6733371450352582, 0.028997180829641558, 0.012006861063464836], "iou": 0.744, "clean_match": false, "exact_match": false, "sim": 0.0, "p_conf": 0.6304, "b_conf": 0.19093827903270721, "p_valid": false, "b_valid": false, "lexical_verdict": "NEITHER_VALID", "manual_verdict": null}, {"idx": 12, "p_text": "0599-968-811", "b_text": "100505950", "p_box": [0.06685461135722916, 0.5924337716790546, 0.09765069136796885, 0.011816275967219363], "b_box": [0.06685461135722916, 0.5896702877834953, 0.09773123909249563, 0.016199733180865258], "iou": 0.729, "clean_match": false, "exact_match": false, "sim": 0.083, "p_conf": 0.8372, "b_conf": 0.21843348443508148, "p_valid": true, "b_valid": true, "lexical_verdict": "BOTH_VALID", "manual_verdict": null}, {"idx": 13, "p_text": "ZL79-L8", "b_text": "121921", "p_box": [0.09052221774734863, 0.08456260720411664, 0.05132232514431467, 0.01538021726700972], "b_box": [0.08967646663981743, 0.08118925100057175, 0.05235602094240838, 0.02115494568324757], "iou": 0.713, "clean_match": false, "exact_match": false, "sim": 0.143, "p_conf": 0.7257, "b_conf": 0.21379876136779785, "p_valid": false, "b_valid": true, "lexical_verdict": "ABBYY_WIN", "manual_verdict": null}, {"idx": 14, "p_text": "0|\u2014|", "b_text": "\u4e09O1-E\u2162", "p_box": [0.3985904148207813, 0.01963026491328378, 0.05517519130084575, 0.00989136649514008], "b_box": [0.39790575916230364, 0.01696207356584715, 0.05544368371593503, 0.0137221269296741], "iou": 0.708, "clean_match": false, "exact_match": false, "sim": 0.0, "p_conf": 0.7101, "b_conf": 0.3676428496837616, "p_valid": true, "b_valid": true, "lexical_verdict": "BOTH_VALID", "manual_verdict": null}, {"idx": 15, "p_text": "ITysy", "b_text": "TATAS", "p_box": [0.4899718082964156, 0.6746331236897275, 0.0343566921734461, 0.01025347817800648], "b_box": [0.48530004027386225, 0.6733371450352582, 0.03624647603705195, 0.012006861063464836], "iou": 0.698, "clean_match": false, "exact_match": false, "sim": 0.0, "p_conf": 0.6304, "b_conf": 0.19093827903270721, "p_valid": false, "b_valid": false, "lexical_verdict": "NEITHER_VALID", "manual_verdict": null}, {"idx": 16, "p_text": "DanO8\u092f3AV89", "b_text": "CAARRRRAASA", "p_box": [0.5883071553228622, 0.6178197064989518, 0.0880363807222446, 0.008824089956165427], "b_box": [0.5877298966304202, 0.6153992757766342, 0.09679151563968318, 0.012388031255955785], "iou": 0.648, "clean_match": false, "exact_match": false, "sim": 0.091, "p_conf": 0.5863, "b_conf": 0.12815748155117035, "p_valid": false, "b_valid": false, "lexical_verdict": "NEITHER_VALID", "manual_verdict": null}, {"idx": 17, "p_text": "9l8l-889", "b_text": "15083000", "p_box": [0.2894213988454826, 0.9004764627406138, 0.05688132635253054, 0.009910425004764627], "b_box": [0.28943482346623706, 0.8984181437011626, 0.07531212243254128, 0.012578616352201259], "iou": 0.595, "clean_match": false, "exact_match": false, "sim": 0.0, "p_conf": 0.8196, "b_conf": 0.18550947308540344, "p_valid": false, "b_valid": true, "lexical_verdict": "ABBYY_WIN", "manual_verdict": null}, {"idx": 18, "p_text": "p601-88", "b_text": "08034223", "p_box": [0.2860383944153577, 0.7432246998284734, 0.05807490938380991, 0.013398132266056793], "b_box": [0.2851389448248087, 0.7406136840099105, 0.08202443280977312, 0.0173432437583381], "iou": 0.547, "clean_match": false, "exact_match": false, "sim": 0.125, "p_conf": 0.5833, "b_conf": 0.1800287514925003, "p_valid": false, "b_valid": true, "lexical_verdict": "ABBYY_WIN", "manual_verdict": null}, {"idx": 19, "p_text": "6p69-098", "b_text": "67000005050", "p_box": [0.06886830447039871, 0.7706689536878216, 0.05823399113975031, 0.011720983419096626], "b_box": [0.06873405826285407, 0.7693920335429769, 0.09531480735669218, 0.012578616352201259], "iou": 0.538, "clean_match": false, "exact_match": false, "sim": 0.182, "p_conf": 0.731, "b_conf": 0.18819588422775269, "p_valid": false, "b_valid": true, "lexical_verdict": "ABBYY_WIN", "manual_verdict": null}, {"idx": 20, "p_text": "p801-988", "b_text": "13000030", "p_box": [0.3886293462209693, 0.22879740804269105, 0.054074372398979734, 0.009433962264150943], "b_box": [0.3882400322190898, 0.22660567943586812, 0.08108470935696066, 0.012388031255955785], "iou": 0.508, "clean_match": false, "exact_match": false, "sim": 0.125, "p_conf": 0.529, "b_conf": 0.18530160188674927, "p_valid": false, "b_valid": true, "lexical_verdict": "ABBYY_WIN", "manual_verdict": null}, {"idx": 21, "p_text": "AVMSDNIH", "b_text": "SAMS5NSAA", "p_box": [0.07513760236273326, 0.27571945873832665, 0.05740367834608673, 0.009281494187154566], "b_box": [0.07450664518727346, 0.2734896131122546, 0.08927372801718352, 0.012388031255955785], "iou": 0.482, "clean_match": false, "exact_match": false, "sim": 0.333, "p_conf": 0.7248, "b_conf": 0.1881803274154663, "p_valid": false, "b_valid": false, "lexical_verdict": "NEITHER_VALID", "manual_verdict": null}, {"idx": 22, "p_text": "VIsIAvNOt", "b_text": "AASAAANARAERE", "p_box": [0.4890589340851121, 0.031808652563369545, 0.057578198415894746, 0.009357728225652754], "b_box": [0.4854342864814069, 0.029731275014293884, 0.09531480735669218, 0.011816275967219363], "iou": 0.478, "clean_match": false, "exact_match": false, "sim": 0.154, "p_conf": 0.6796, "b_conf": 0.15887168049812317, "p_valid": false, "b_valid": false, "lexical_verdict": "NEITHER_VALID", "manual_verdict": null}, {"idx": 23, "p_text": "TOLIdVO", "b_text": "SAARTOAASAEGE", "p_box": [0.20250839038797153, 0.8449590242043072, 0.05135226204859713, 0.010482180293501049], "b_box": [0.17277486910994763, 0.8433390508862207, 0.09531480735669218, 0.012578616352201259], "iou": 0.449, "clean_match": false, "exact_match": false, "sim": 0.154, "p_conf": 0.7547, "b_conf": 0.16692611575126648, "p_valid": false, "b_valid": false, "lexical_verdict": "NEITHER_VALID", "manual_verdict": null}, {"idx": 24, "p_text": "IONIDV", "b_text": "SEALEAALRAEE", "p_box": [0.18726003490401397, 0.4620926243567753, 0.0443891797556719, 0.011511339813226605], "b_box": [0.1730433615250369, 0.4612159329140461, 0.09450933011142436, 0.01219744615971031], "iou": 0.433, "clean_match": false, "exact_match": false, "sim": 0.0, "p_conf": 0.684, "b_conf": 0.1483546793460846, "p_valid": false, "b_valid": false, "lexical_verdict": "NEITHER_VALID", "manual_verdict": null}, {"idx": 25, "p_text": "03", "b_text": "CCC", "p_box": [0.6693851523694455, 0.5444825614636936, 0.013860920928983757, 0.007966457023060796], "b_box": [0.6557927238555511, 0.5433581093958453, 0.027251980131561285, 0.009910425004764627], "iou": 0.401, "clean_match": false, "exact_match": false, "sim": 0.0, "p_conf": 0.5399, "b_conf": 0.09864490479230881, "p_valid": true, "b_valid": false, "lexical_verdict": "PADDLE_WIN", "manual_verdict": null}, {"idx": 26, "p_text": "OIgIOVA", "b_text": "AARAAAEDARAAE", "p_box": [0.38148744797959455, 0.2526396035829998, 0.051366760639011945, 0.010596531351248332], "b_box": [0.3809907370116794, 0.2502382313703068, 0.09531480735669218, 0.01429388221841052], "iou": 0.4, "clean_match": false, "exact_match": false, "sim": 0.077, "p_conf": 0.7142, "b_conf": 0.1459299921989441, "p_valid": false, "b_valid": false, "lexical_verdict": "NEITHER_VALID", "manual_verdict": null}, {"idx": 27, "p_text": "\u2022", "b_text": "\u5f3a", "p_box": [0.7598201100818901, 0.9046312178387651, 0.020499395892066046, 0.02591957308938441], "b_box": [0.7619814740233588, 0.9079473985134362, 0.01154517384883877, 0.017152658662092625], "iou": 0.373, "clean_match": false, "exact_match": false, "sim": 0.0, "p_conf": 0.6752, "b_conf": 0.14158840477466583, "p_valid": false, "b_valid": true, "lexical_verdict": "ABBYY_WIN", "manual_verdict": null}, {"idx": 28, "p_text": "JHDINN", "b_text": "SSS80NS8G", "p_box": [0.2917449322056652, 0.6840099104250048, 0.04370022821855283, 0.012064036592338479], "b_box": [0.27694992616458586, 0.6813417190775681, 0.09316686803597798, 0.01581856298837431], "iou": 0.358, "clean_match": false, "exact_match": false, "sim": 0.111, "p_conf": 0.5292, "b_conf": 0.16874754428863525, "p_valid": false, "b_valid": false, "lexical_verdict": "NEITHER_VALID", "manual_verdict": null}, {"idx": 29, "p_text": "*\u042fSVS", "b_text": "AEESASSSA", "p_box": [0.23274936233051416, 0.413093196112064, 0.03567592965498725, 0.009433962264150943], "b_box": [0.18593099744932207, 0.4114732227939775, 0.0822929252248624, 0.011816275967219363], "iou": 0.343, "clean_match": false, "exact_match": false, "sim": 0.222, "p_conf": 0.6695, "b_conf": 0.17377476394176483, "p_valid": false, "b_valid": false, "lexical_verdict": "NEITHER_VALID", "manual_verdict": null}, {"idx": 30, "p_text": "ED88-", "b_text": "3033-73200", "p_box": [0.5901463283662236, 0.18094149037545262, 0.03347200966572694, 0.01032971221650467], "b_box": [0.5894750973285005, 0.17895940537449972, 0.08108470935696066, 0.012578616352201259], "iou": 0.339, "clean_match": false, "exact_match": false, "sim": 0.1, "p_conf": 0.6946, "b_conf": 0.19649150967597961, "p_valid": false, "b_valid": true, "lexical_verdict": "ABBYY_WIN", "manual_verdict": null}, {"idx": 31, "p_text": "5grova", "b_text": "SARAAAEDLEAAE", "p_box": [0.2790575916230366, 0.7684962835906233, 0.0474694589877836, 0.01320754716981132], "b_box": [0.2778896496173983, 0.7642462359443492, 0.09598603839441536, 0.020011435105774727], "iou": 0.326, "clean_match": false, "exact_match": false, "sim": 0.0, "p_conf": 0.5678, "b_conf": 0.13673962652683258, "p_valid": false, "b_valid": false, "lexical_verdict": "NEITHER_VALID", "manual_verdict": null}, {"idx": 32, "p_text": "9989", "b_text": "15852", "p_box": [0.49805342999060276, 0.47566228320945303, 0.028460195999463016, 0.009586430341147322], "b_box": [0.5007383541414955, 0.47474747474747475, 0.06779433481004161, 0.01105393558223747], "iou": 0.319, "clean_match": false, "exact_match": false, "sim": 0.2, "p_conf": 0.5563, "b_conf": 0.20285959541797638, "p_valid": true, "b_valid": true, "lexical_verdict": "BOTH_VALID", "manual_verdict": null}, {"idx": 33, "p_text": "3LIM", "b_text": "COREAASA", "p_box": [0.21369311316955295, 0.4381932532875929, 0.036461269969123376, 0.009014675052410902], "b_box": [0.18593099744932207, 0.4360587002096436, 0.08202443280977312, 0.012769201448446732], "iou": 0.314, "clean_match": false, "exact_match": false, "sim": 0.0, "p_conf": 0.5202, "b_conf": 0.15913748741149902, "p_valid": false, "b_valid": false, "lexical_verdict": "NEITHER_VALID", "manual_verdict": null}, {"idx": 34, "p_text": "\u2022", "b_text": "\u3002", "p_box": [0.2564639548932743, 0.5714312940728036, 0.005953819304604645, 0.008919382504288163], "b_box": [0.2552020405423547, 0.5700400228702116, 0.013827359377097597, 0.013150371640937679], "iou": 0.292, "clean_match": false, "exact_match": false, "sim": 0.0, "p_conf": 0.6016, "b_conf": 0.3581770360469818, "p_valid": false, "b_valid": false, "lexical_verdict": "NEITHER_VALID", "manual_verdict": null}, {"idx": 35, "p_text": "988P", "b_text": "32321320", "p_box": [0.17328500469861727, 0.02361349342481418, 0.026706000805477245, 0.009453020773775491], "b_box": [0.17317760773258156, 0.022298456260720412, 0.08027923211169284, 0.010291595197255575], "iou": 0.286, "clean_match": false, "exact_match": false, "sim": 0.0, "p_conf": 0.7297, "b_conf": 0.17438754439353943, "p_valid": false, "b_valid": true, "lexical_verdict": "ABBYY_WIN", "manual_verdict": null}, {"idx": 36, "p_text": "\u25e6", "b_text": "\u3002\u5355", "p_box": [0.9051550543697141, 0.6248141795311607, 0.004678480332930595, 0.006384600724223366], "b_box": [0.9046851926433078, 0.6224509243377168, 0.010873942811115585, 0.010101010101010102], "iou": 0.272, "clean_match": false, "exact_match": false, "sim": 0.0, "p_conf": 0.8494, "b_conf": 0.30151987075805664, "p_valid": false, "b_valid": true, "lexical_verdict": "ABBYY_WIN", "manual_verdict": null}, {"idx": 37, "p_text": "9129", "b_text": "9427466-210", "p_box": [0.07613102429856357, 0.6577282256527539, 0.026706000805477245, 0.009453020773775491], "b_box": [0.07517787622499664, 0.6561844863731656, 0.08135320177204994, 0.01219744615971031], "iou": 0.254, "clean_match": false, "exact_match": false, "sim": 0.182, "p_conf": 0.8008, "b_conf": 0.34778648614883423, "p_valid": true, "b_valid": true, "lexical_verdict": "BOTH_VALID", "manual_verdict": null}, {"idx": 38, "p_text": "000|1", "b_text": "0", "p_box": [0.4856222311719694, 0.20005717552887364, 0.02633910592025775, 0.010882408995616544], "b_box": [0.4854342864814069, 0.19916142557651992, 0.09477782252651362, 0.01105393558223747], "iou": 0.251, "clean_match": false, "exact_match": false, "sim": 0.2, "p_conf": 0.6221, "b_conf": 0.0481211356818676, "p_valid": false, "b_valid": true, "lexical_verdict": "ABBYY_WIN", "manual_verdict": null}, {"idx": 39, "p_text": "2896", "b_text": "1897-84710277", "p_box": [0.38253456839844274, 0.3061940156279779, 0.02722902403007115, 0.010215361158757385], "b_box": [0.38219895287958117, 0.3047455688965123, 0.09531480735669218, 0.011244520678482943], "iou": 0.246, "clean_match": false, "exact_match": false, "sim": 0.154, "p_conf": 0.5477, "b_conf": 0.23535992205142975, "p_valid": true, "b_valid": true, "lexical_verdict": "BOTH_VALID", "manual_verdict": null}, {"idx": 40, "p_text": "\u90e8", "b_text": "\u00b7", "p_box": [0.6730255067794335, 0.24823708785972937, 0.006748154114646261, 0.0104631217838765], "b_box": [0.6651899583836757, 0.24680769963788832, 0.021076654584507987, 0.013912712025919573], "iou": 0.241, "clean_match": false, "exact_match": false, "sim": 0.0, "p_conf": 0.6478, "b_conf": 0.4698789417743683, "p_valid": true, "b_valid": false, "lexical_verdict": "PADDLE_WIN", "manual_verdict": null}, {"idx": 41, "p_text": "Cnyd", "b_text": "TONAA", "p_box": [0.19156128339374415, 0.8567943586811512, 0.02603302456705598, 0.011682866399847532], "b_box": [0.17143240703450127, 0.8551553268534401, 0.09706000805477245, 0.013531541833428626], "iou": 0.232, "clean_match": false, "exact_match": false, "sim": 0.0, "p_conf": 0.5575, "b_conf": 0.11872591823339462, "p_valid": false, "b_valid": false, "lexical_verdict": "NEITHER_VALID", "manual_verdict": null}, {"idx": 42, "p_text": "\u2022", "b_text": "\u90e8", "p_box": [0.2564102564102564, 0.243453401943968, 0.004340582628540744, 0.009510196302649132], "b_box": [0.2560075177876225, 0.241852487135506, 0.01369311316955296, 0.013150371640937679], "iou": 0.229, "clean_match": false, "exact_match": false, "sim": 0.0, "p_conf": 0.5606, "b_conf": 0.2128126621246338, "p_valid": false, "b_valid": true, "lexical_verdict": "ABBYY_WIN", "manual_verdict": null}, {"idx": 43, "p_text": "\u2018A", "b_text": "STAGSAE", "p_box": [0.17729896630420192, 0.42540499332952164, 0.012760102027117734, 0.009281494187154566], "b_box": [0.17747348637400995, 0.4240518391461788, 0.05047657403678346, 0.012006861063464836], "iou": 0.192, "clean_match": false, "exact_match": false, "sim": 0.143, "p_conf": 0.7032, "b_conf": 0.19456377625465393, "p_valid": true, "b_valid": false, "lexical_verdict": "PADDLE_WIN", "manual_verdict": null}, {"idx": 44, "p_text": "\u25e6", "b_text": "\u00b7\u624b\u7ba1", "p_box": [0.9001073969660357, 0.3350295406899181, 0.00481500872600349, 0.006746712407089766], "b_box": [0.8997180829641562, 0.33199923765961503, 0.015572560075177877, 0.011435105774728416], "iou": 0.182, "clean_match": false, "exact_match": false, "sim": 0.0, "p_conf": 0.5504, "b_conf": 0.33578523993492126, "p_valid": false, "b_valid": true, "lexical_verdict": "ABBYY_WIN", "manual_verdict": null}, {"idx": 45, "p_text": "\u7acb", "b_text": "\u5668", "p_box": [0.4148241374681165, 0.5430150562226034, 0.016864679822795006, 0.015856680007623403], "b_box": [0.3976372667472144, 0.5389746521821993, 0.06792858101758625, 0.022489041356965885], "iou": 0.175, "clean_match": false, "exact_match": false, "sim": 0.0, "p_conf": 0.5419, "b_conf": 0.042270682752132416, "p_valid": true, "b_valid": true, "lexical_verdict": "BOTH_VALID", "manual_verdict": null}, {"idx": 46, "p_text": "9", "b_text": "9900", "p_box": [0.08041347831923748, 0.046274061368400995, 0.00622902403007115, 0.008862206975414523], "b_box": [0.0731641831118271, 0.04440632742519535, 0.026849241508927372, 0.01219744615971031], "iou": 0.169, "clean_match": false, "exact_match": false, "sim": 0.25, "p_conf": 0.9698, "b_conf": 0.5926255583763123, "p_valid": true, "b_valid": true, "lexical_verdict": "BOTH_VALID", "manual_verdict": null}, {"idx": 47, "p_text": "\u8b58", "b_text": "\u00b7", "p_box": [0.7866022284870452, 0.6335620354488279, 0.0048664250234930866, 0.006803887935963408], "b_box": [0.7767485568532689, 0.6314084238612541, 0.020271177339240165, 0.009910425004764627], "iou": 0.165, "clean_match": false, "exact_match": false, "sim": 0.0, "p_conf": 0.5222, "b_conf": 0.36178070306777954, "p_valid": true, "b_valid": false, "lexical_verdict": "PADDLE_WIN", "manual_verdict": null}, {"idx": 48, "p_text": "\u00e0\u0947", "b_text": "\u00b7\u5ca1\u77f3", "p_box": [0.710189287152638, 0.9198208500095293, 0.004564371056517654, 0.012121212121212121], "b_box": [0.7085514834205934, 0.8987993138936535, 0.009934219358303128, 0.035067657709167144], "iou": 0.159, "clean_match": false, "exact_match": false, "sim": 0.0, "p_conf": 0.5608, "b_conf": 0.88270503282547, "p_valid": true, "b_valid": true, "lexical_verdict": "BOTH_VALID", "manual_verdict": null}, {"idx": 49, "p_text": "898", "b_text": "00", "p_box": [0.4898912605718888, 0.7673337145035258, 0.019176131024298562, 0.010958643034114732], "b_box": [0.48422607061350514, 0.7648179912330856, 0.09477782252651362, 0.01429388221841052], "iou": 0.155, "clean_match": false, "exact_match": false, "sim": 0.0, "p_conf": 0.5574, "b_conf": 0.2187778651714325, "p_valid": true, "b_valid": true, "lexical_verdict": "BOTH_VALID", "manual_verdict": null}, {"idx": 50, "p_text": "10", "b_text": "EEE", "p_box": [0.08523291717008995, 0.26350295406899177, 0.013827359377097597, 0.008614446350295407], "b_box": [0.08497784937575513, 0.26167333714503527, 0.06457242582897033, 0.01219744615971031], "iou": 0.151, "clean_match": false, "exact_match": false, "sim": 0.0, "p_conf": 0.5417, "b_conf": 0.15677101910114288, "p_valid": true, "b_valid": false, "lexical_verdict": "PADDLE_WIN", "manual_verdict": null}, {"idx": 51, "p_text": "V", "b_text": "TATARS", "p_box": [0.4387273459524768, 0.24097579569277683, 0.007966169955698751, 0.008366685725176291], "b_box": [0.42153309169015973, 0.2389937106918239, 0.04148207813129279, 0.011816275967219363], "iou": 0.136, "clean_match": false, "exact_match": false, "sim": 0.0, "p_conf": 0.7598, "b_conf": 0.14788395166397095, "p_valid": false, "b_valid": true, "lexical_verdict": "ABBYY_WIN", "manual_verdict": null}, {"idx": 52, "p_text": "NM", "b_text": "N\u7535OAO", "p_box": [0.49830178547456033, 0.9212883552506194, 0.013686400859175728, 0.011015818562988373], "b_box": [0.485031547858773, 0.9193825042881647, 0.09518056114914754, 0.012006861063464836], "iou": 0.12, "clean_match": false, "exact_match": false, "sim": 0.2, "p_conf": 0.5794, "b_conf": 0.11150499433279037, "p_valid": false, "b_valid": true, "lexical_verdict": "ABBYY_WIN", "manual_verdict": null}, {"idx": 53, "p_text": "8", "b_text": "ARRSRRE", "p_box": [0.5507508390387971, 0.5000190585096246, 0.007841857967512418, 0.00851915380217267], "b_box": [0.5265136259900658, 0.498189441585668, 0.05504094509330112, 0.011435105774728416], "iou": 0.106, "clean_match": false, "exact_match": false, "sim": 0.0, "p_conf": 0.539, "b_conf": 0.17494381964206696, "p_valid": true, "b_valid": false, "lexical_verdict": "PADDLE_WIN", "manual_verdict": null}, {"idx": 54, "p_text": "\u0915\u0939", "b_text": "\u5e740\u516b\u4e5d\u4e00\u5143\u516c", "p_box": [0.925909518056115, 0.17876882027825425, 0.007920526245133576, 0.008843148465789975], "b_box": [0.926030339642905, 0.17648179912330855, 0.009262988320579944, 0.07032590051457976], "iou": 0.106, "clean_match": false, "exact_match": false, "sim": 0.0, "p_conf": 0.6206, "b_conf": 0.942172110080719, "p_valid": false, "b_valid": true, "lexical_verdict": "ABBYY_WIN", "manual_verdict": null}, {"idx": 55, "p_text": "9", "b_text": "33758350", "p_box": [0.42957108336689487, 0.3306842004955212, 0.006621694187139214, 0.008976558033161807], "b_box": [0.4097194254262317, 0.32914046121593293, 0.052758759565042286, 0.009910425004764627], "iou": 0.105, "clean_match": false, "exact_match": false, "sim": 0.0, "p_conf": 0.8114, "b_conf": 0.18783977627754211, "p_valid": true, "b_valid": true, "lexical_verdict": "BOTH_VALID", "manual_verdict": null}, {"idx": 56, "p_text": "\u6ce8", "b_text": "\u5831\u516c\u6c49", "p_box": [0.9278426634447576, 0.2959024204307223, 0.009061619009262988, 0.009738898418143701], "b_box": [0.9262988320579943, 0.29083285687059274, 0.012216404886561954, 0.0707070707070707], "iou": 0.102, "clean_match": false, "exact_match": false, "sim": 0.0, "p_conf": 0.7722, "b_conf": 0.7651352882385254, "p_valid": true, "b_valid": true, "lexical_verdict": "BOTH_VALID", "manual_verdict": null}, {"idx": 57, "p_text": "\u5341", "b_text": "\u00b7", "p_box": [0.5434659685863874, 0.3888507718696398, 0.007376023627332529, 0.01069182389937107], "b_box": [0.5129547590280574, 0.3874595006670478, 0.06725734997986307, 0.01105393558223747], "iou": 0.095, "clean_match": false, "exact_match": false, "sim": 0.0, "p_conf": 0.5484, "b_conf": 0.2688065767288208, "p_valid": true, "b_valid": false, "lexical_verdict": "PADDLE_WIN", "manual_verdict": null}, {"idx": 58, "p_text": "2m", "b_text": "\u65e5\u4e00\u5341\u6708\u516b", "p_box": [0.9271714324070345, 0.13095101963026493, 0.0064035440998791784, 0.006613302839717935], "b_box": [0.9252248623976372, 0.09834190966266437, 0.009531480735669217, 0.05088622069754145], "iou": 0.087, "clean_match": false, "exact_match": false, "sim": 0.0, "p_conf": 0.5131, "b_conf": 0.9926183819770813, "p_valid": false, "b_valid": true, "lexical_verdict": "ABBYY_WIN", "manual_verdict": null}, {"idx": 59, "p_text": "\u8fa6", "b_text": "\u00b7", "p_box": [0.4412795006041079, 0.830569849437774, 0.006150892737280172, 0.010863350485991996], "b_box": [0.4097194254262317, 0.8284734133790738, 0.06859981205530943, 0.013531541833428626], "iou": 0.072, "clean_match": false, "exact_match": false, "sim": 0.0, "p_conf": 0.56195, "b_conf": 0.25605547428131104, "p_valid": true, "b_valid": false, "lexical_verdict": "PADDLE_WIN", "manual_verdict": null}, {"idx": 60, "p_text": "\u7f69", "b_text": "1", "p_box": [0.1147747348637401, 0.8994854202401373, 0.006547321788159485, 0.011168286639984754], "b_box": [0.08041347831923748, 0.8972746331236897, 0.07692307692307693, 0.013340956737183152], "iou": 0.071, "clean_match": false, "exact_match": false, "sim": 0.0, "p_conf": 0.5937, "b_conf": 0.244502991437912, "p_valid": true, "b_valid": true, "lexical_verdict": "BOTH_VALID", "manual_verdict": null}, {"idx": 61, "p_text": "8", "b_text": "829232809002", "p_box": [0.21657605047657405, 0.45000952925481225, 0.007286212914485166, 0.01090146750524109], "b_box": [0.1794871794871795, 0.4480655612731084, 0.08833400456437106, 0.013340956737183152], "iou": 0.067, "clean_match": false, "exact_match": false, "sim": 0.083, "p_conf": 0.8604, "b_conf": 0.2520489990711212, "p_valid": true, "b_valid": true, "lexical_verdict": "BOTH_VALID", "manual_verdict": null}, {"idx": 62, "p_text": "\u3002", "b_text": "\u00b7", "p_box": [0.21345146999597261, 0.7955784257671049, 0.0069002550677943345, 0.01162569087097389], "b_box": [0.17170089944959055, 0.793977510958643, 0.0965230232245939, 0.013150371640937679], "iou": 0.063, "clean_match": false, "exact_match": false, "sim": 0.0, "p_conf": 0.5406, "b_conf": 0.2586340010166168, "p_valid": false, "b_valid": false, "lexical_verdict": "NEITHER_VALID", "manual_verdict": null}, {"idx": 63, "p_text": "284", "b_text": "TERAES", "p_box": [0.3441133037991677, 0.7432246998284734, 0.024889246878775674, 0.013398132266056793], "b_box": [0.31883474291851255, 0.7533828854583572, 0.042019062961471336, 0.01429388221841052], "iou": 0.062, "clean_match": false, "exact_match": false, "sim": 0.0, "p_conf": 0.5833, "b_conf": 0.16169728338718414, "p_valid": true, "b_valid": false, "lexical_verdict": "PADDLE_WIN", "manual_verdict": null}, {"idx": 64, "p_text": "\u2022", "b_text": "\uff1a", "p_box": [0.47643979057591623, 0.7808271393177053, 0.00557121761310243, 0.012578616352201259], "b_box": [0.4567055980668546, 0.779874213836478, 0.02134514699959726, 0.013150371640937679], "iou": 0.059, "clean_match": false, "exact_match": false, "sim": 0.0, "p_conf": 0.5869, "b_conf": 0.19427773356437683, "p_valid": false, "b_valid": false, "lexical_verdict": "NEITHER_VALID", "manual_verdict": null}, {"idx": 65, "p_text": "\u81f3", "b_text": "ATAARA", "p_box": [0.49829507316418314, 0.5591004383457213, 0.00680628272251309, 0.010310653706880122], "b_box": [0.48422607061350514, 0.5574614065180102, 0.09034769767754061, 0.013150371640937679], "iou": 0.059, "clean_match": false, "exact_match": false, "sim": 0.0, "p_conf": 0.514, "b_conf": 0.12996357679367065, "p_valid": true, "b_valid": false, "lexical_verdict": "PADDLE_WIN", "manual_verdict": null}, {"idx": 66, "p_text": "\u570b", "b_text": "\u8bf7", "p_box": [0.42335696066586115, 0.8677148846960167, 0.0068282991005504095, 0.011606632361349341], "b_box": [0.3816619680494026, 0.8656375071469411, 0.09692576184722781, 0.014103297122165046], "iou": 0.058, "clean_match": false, "exact_match": false, "sim": 0.0, "p_conf": 0.6029, "b_conf": 0.03611283004283905, "p_valid": true, "b_valid": true, "lexical_verdict": "BOTH_VALID", "manual_verdict": null}, {"idx": 67, "p_text": "L", "b_text": "NAMASASARRAS", "p_box": [0.629326084038126, 0.6300743281875357, 0.006655255739025373, 0.009167143129407281], "b_box": [0.5874614042153309, 0.62778730703259, 0.09625453080950463, 0.01219744615971031], "iou": 0.052, "clean_match": false, "exact_match": false, "sim": 0.0, "p_conf": 0.7925, "b_conf": 0.16111470758914948, "p_valid": true, "b_valid": false, "lexical_verdict": "PADDLE_WIN", "manual_verdict": null}, {"idx": 68, "p_text": "81T", "b_text": "\u51fa\u7968", "p_box": [0.6503960263122567, 0.18094149037545262, 0.020083232648677674, 0.01032971221650467], "b_box": [0.6559269700630957, 0.1890604154755098, 0.029668411867364748, 0.015246807699637889], "iou": 0.051, "clean_match": false, "exact_match": false, "sim": 0.0, "p_conf": 0.6946, "b_conf": 0.09686543047428131, "p_valid": false, "b_valid": true, "lexical_verdict": "ABBYY_WIN", "manual_verdict": null}, {"idx": 69, "p_text": "9", "b_text": "1000.0", "p_box": [0.21589139481809638, 0.34587383266628546, 0.005963887770170493, 0.010806174957118353], "b_box": [0.17344610014767084, 0.34400609872307986, 0.09585179218687072, 0.013340956737183152], "iou": 0.05, "clean_match": false, "exact_match": false, "sim": 0.0, "p_conf": 0.6045, "b_conf": 0.19505004584789276, "p_valid": true, "b_valid": true, "lexical_verdict": "BOTH_VALID", "manual_verdict": null}];
+  const pOnlyData = [{"text": "\u984c", "box": [0.06575379245536314, 0.9240137221269297, 0.0069903342730567855, 0.012845435486944922], "conf": 0.5074}, {"text": "\u5b9a", "box": [0.07274412672841991, 0.9240137221269297, 0.0069903342730567855, 0.012845435486944922], "conf": 0.5074}, {"text": "\u3002", "box": [0.07973459524768425, 0.9240137221269297, 0.0069903342730567855, 0.012845435486944922], "conf": 0.5074}, {"text": "\u696d", "box": [0.08672492952074104, 0.9240137221269297, 0.0069903342730567855, 0.012845435486944922], "conf": 0.5074}, {"text": "\u76e3", "box": [0.09371539804000537, 0.9240137221269297, 0.0069903342730567855, 0.012845435486944922], "conf": 0.5074}, {"text": "\u76df", "box": [0.10070573231306217, 0.9240137221269297, 0.0069903342730567855, 0.012845435486944922], "conf": 0.5074}, {"text": "\u96f6", "box": [0.10769620083232649, 0.9240137221269297, 0.0069903342730567855, 0.012845435486944922], "conf": 0.5074}, {"text": "\u526f", "box": [0.11468653510538326, 0.9240137221269297, 0.0069903342730567855, 0.012845435486944922], "conf": 0.5074}, {"text": "\u300b", "box": [0.12167686937844005, 0.9240137221269297, 0.0069903342730567855, 0.012845435486944922], "conf": 0.5074}, {"text": "\u3002", "box": [0.12866733789770438, 0.9240137221269297, 0.0069903342730567855, 0.012845435486944922], "conf": 0.5074}, {"text": "\u7121", "box": [0.1356576721707612, 0.9240137221269297, 0.0069903342730567855, 0.012845435486944922], "conf": 0.5074}, {"text": "\u9707", "box": [0.14264814069002552, 0.9240137221269297, 0.0069903342730567855, 0.012845435486944922], "conf": 0.5074}, {"text": "\u8aaa", "box": [0.14963847496308227, 0.9240137221269297, 0.0069903342730567855, 0.012845435486944922], "conf": 0.5074}, {"text": "\u5dde", "box": [0.15662894348234663, 0.9240137221269297, 0.0069903342730567855, 0.012845435486944922], "conf": 0.5074}, {"text": "-29", "box": [0.19999100550409452, 0.02361349342481418, 0.020029534165659817, 0.009453020773775491], "conf": 0.7297}, {"text": "9-", "box": [0.22002053966975432, 0.02361349342481418, 0.013353067525842395, 0.009453020773775491], "conf": 0.7297}, {"text": "81", "box": [0.23337360719559674, 0.02361349342481418, 0.013353067525842395, 0.009453020773775491], "conf": 0.7297}, {"text": "T", "box": [0.2467266747214391, 0.02361349342481418, 0.0066764666398174246, 0.009453020773775491], "conf": 0.7297}, {"text": ">|>0>a", "box": [0.20017452006980802, 0.07815894797026873, 0.0543831386763324, 0.01090146750524109], "conf": 0.522}, {"text": "->a-|T", "box": [0.2012216404886562, 0.25685153421002477, 0.054087797019734186, 0.011358871736230227], "conf": 0.5599}, {"text": "a", "box": [0.26396831789501946, 0.25685153421002477, 0.005598066854611358, 0.011358871736230227], "conf": 0.5599}, {"text": "0", "box": [0.17414418042690294, 0.34587383266628546, 0.005963887770170493, 0.010806174957118353], "conf": 0.6045}, {"text": ".", "box": [0.18010806819707342, 0.34587383266628546, 0.005963887770170493, 0.010806174957118353], "conf": 0.6045}, {"text": "8", "box": [0.1860719559672439, 0.34587383266628546, 0.005963887770170493, 0.010806174957118353], "conf": 0.6045}, {"text": ".", "box": [0.19203584373741442, 0.34587383266628546, 0.005963887770170493, 0.010806174957118353], "conf": 0.6045}, {"text": "1", "box": [0.19799973150758493, 0.34587383266628546, 0.005963887770170493, 0.010806174957118353], "conf": 0.6045}, {"text": "\u00d7", "box": [0.20396361927775541, 0.34587383266628546, 0.005963887770170493, 0.010806174957118353], "conf": 0.6045}, {"text": "0", "box": [0.2099275070479259, 0.34587383266628546, 0.005963887770170493, 0.010806174957118353], "conf": 0.6045}, {"text": "\u5c4a", "box": [0.22185528258826687, 0.34587383266628546, 0.005963887770170493, 0.010806174957118353], "conf": 0.6045}, {"text": "\u3002", "box": [0.22781917035843738, 0.34587383266628546, 0.005963887770170493, 0.010806174957118353], "conf": 0.6045}, {"text": "\u6fb3", "box": [0.23378305812860786, 0.34587383266628546, 0.005963887770170493, 0.010806174957118353], "conf": 0.6045}, {"text": "\u5341", "box": [0.23974694589877835, 0.34587383266628546, 0.005963887770170493, 0.010806174957118353], "conf": 0.6045}, {"text": "\u51fa", "box": [0.24571083366894886, 0.34587383266628546, 0.005963887770170493, 0.010806174957118353], "conf": 0.6045}, {"text": "\u9879", "box": [0.25167472143911934, 0.34587383266628546, 0.005963887770170493, 0.010806174957118353], "conf": 0.6045}, {"text": "\u5ddd", "box": [0.2576386092092898, 0.34587383266628546, 0.005963887770170493, 0.010806174957118353], "conf": 0.6045}, {"text": "\u4e66", "box": [0.2636024969794603, 0.34587383266628546, 0.005963887770170493, 0.010806174957118353], "conf": 0.6045}, {"text": "O", "box": [0.18633373607195597, 0.41366495140080045, 0.005739025372533226, 0.009109967600533639], "conf": 0.6161}, {"text": "L", "box": [0.1920727614444892, 0.41366495140080045, 0.005739025372533226, 0.009109967600533639], "conf": 0.6161}, {"text": "T.", "box": [0.1978117868170224, 0.41366495140080045, 0.011478050745066451, 0.009109967600533639], "conf": 0.6161}, {"text": "g0S", "box": [0.2113438045375218, 0.413093196112064, 0.021405557792992348, 0.009433962264150943], "conf": 0.6695}, {"text": "T", "box": [0.19005906833131964, 0.42540499332952164, 0.006380051013558867, 0.009281494187154566], "conf": 0.7032}, {"text": "V", "box": [0.1964391193448785, 0.42540499332952164, 0.006380051013558867, 0.009281494187154566], "conf": 0.7032}, {"text": "A", "box": [0.20281917035843736, 0.42540499332952164, 0.006380051013558867, 0.009281494187154566], "conf": 0.7032}, {"text": "S", "box": [0.20919922137199626, 0.42540499332952164, 0.006380051013558867, 0.009281494187154566], "conf": 0.7032}, {"text": "I", "box": [0.2155792723855551, 0.42540499332952164, 0.006380051013558867, 0.009281494187154566], "conf": 0.7032}, {"text": "L", "box": [0.22195932339911398, 0.42540499332952164, 0.006380051013558867, 0.009281494187154566], "conf": 0.7032}, {"text": "xO9", "box": [0.18634716069271043, 0.4381932532875929, 0.027345952476842527, 0.009014675052410902], "conf": 0.5202}, {"text": "uO", "box": [0.25015438313867633, 0.4381932532875929, 0.018230634984561688, 0.009014675052410902], "conf": 0.5202}, {"text": "8", "box": [0.1801449859041482, 0.45000952925481225, 0.007286212914485166, 0.01090146750524109], "conf": 0.8604}, {"text": "2", "box": [0.18743119881863338, 0.45000952925481225, 0.007286212914485166, 0.01090146750524109], "conf": 0.8604}, {"text": "9", "box": [0.19471741173311855, 0.45000952925481225, 0.007286212914485166, 0.01090146750524109], "conf": 0.8604}, {"text": "8", "box": [0.20200362464760369, 0.45000952925481225, 0.007286212914485166, 0.01090146750524109], "conf": 0.8604}, {"text": "-", "box": [0.20928983756208888, 0.45000952925481225, 0.007286212914485166, 0.01090146750524109], "conf": 0.8604}, {"text": "2", "box": [0.2238622633910592, 0.45000952925481225, 0.007286212914485166, 0.01090146750524109], "conf": 0.8604}, {"text": "8", "box": [0.2311484763055444, 0.45000952925481225, 0.007286212914485166, 0.01090146750524109], "conf": 0.8604}, {"text": "9", "box": [0.23843468922002953, 0.45000952925481225, 0.007286212914485166, 0.01090146750524109], "conf": 0.8604}, {"text": "0", "box": [0.2457209021345147, 0.45000952925481225, 0.007286212914485166, 0.01090146750524109], "conf": 0.8604}, {"text": "8", "box": [0.25300711504899986, 0.45000952925481225, 0.007286212914485166, 0.01090146750524109], "conf": 0.8604}, {"text": ")", "box": [0.26029332796348503, 0.45000952925481225, 0.007286212914485166, 0.01090146750524109], "conf": 0.8604}, {"text": "S", "box": [0.17307021076654586, 0.4620926243567753, 0.005436971405557793, 0.011511339813226605], "conf": 0.684}, {"text": "9IVTS", "box": [0.23164921465968588, 0.4620926243567753, 0.03699087125788697, 0.011511339813226605], "conf": 0.684}, {"text": "\u2022", "box": [0.2564639548932743, 0.5235753764055651, 0.003969257618472278, 0.008938441013912711], "conf": 0.5699}, {"text": "\u8077", "box": [0.26241777419787893, 0.5714312940728036, 0.005953819304604645, 0.008919382504288163], "conf": 0.6016}, {"text": "\u2013", "box": [0.17504363001745202, 0.6080236325519345, 0.006174385823600484, 0.011682866399847532], "conf": 0.5398}, {"text": "08", "box": [0.1812180158410525, 0.6080236325519345, 0.01234890589340851, 0.011682866399847532], "conf": 0.5398}, {"text": ".", "box": [0.19356692173446102, 0.6080236325519345, 0.006174385823600484, 0.011682866399847532], "conf": 0.5398}, {"text": "0", "box": [0.1997413075580615, 0.6080236325519345, 0.006174385823600484, 0.011682866399847532], "conf": 0.5398}, {"text": "\u65e5", "box": [0.2059158276278695, 0.6080236325519345, 0.006174385823600484, 0.011682866399847532], "conf": 0.5398}, {"text": "\u6210", "box": [0.21209021345146997, 0.6080236325519345, 0.006174385823600484, 0.011682866399847532], "conf": 0.5398}, {"text": "\u96f6", "box": [0.2182645992750705, 0.6080236325519345, 0.006174385823600484, 0.011682866399847532], "conf": 0.5398}, {"text": "\u5730", "box": [0.2244391193448785, 0.6080236325519345, 0.006174385823600484, 0.011682866399847532], "conf": 0.5398}, {"text": "\u9ad8", "box": [0.23061350516847898, 0.6080236325519345, 0.006174385823600484, 0.011682866399847532], "conf": 0.5398}, {"text": "\u3002", "box": [0.23678789099207947, 0.6080236325519345, 0.006174385823600484, 0.011682866399847532], "conf": 0.5398}, {"text": "\u56de", "box": [0.2429624110618875, 0.6080236325519345, 0.006174385823600484, 0.011682866399847532], "conf": 0.5398}, {"text": "\u5ee0", "box": [0.24913679688548798, 0.6080236325519345, 0.006174385823600484, 0.011682866399847532], "conf": 0.5398}, {"text": "\u5e38", "box": [0.2553111827090885, 0.6080236325519345, 0.006174385823600484, 0.011682866399847532], "conf": 0.5398}, {"text": "\u300b", "box": [0.2614857027788965, 0.6080236325519345, 0.006174385823600484, 0.011682866399847532], "conf": 0.5398}, {"text": "\u70ba", "box": [0.17204993958920659, 0.7955784257671049, 0.0069002550677943345, 0.01162569087097389], "conf": 0.5406}, {"text": "\u58fd", "box": [0.17895019465700093, 0.7955784257671049, 0.0069002550677943345, 0.01162569087097389], "conf": 0.5406}, {"text": "|", "box": [0.18585044972479528, 0.7955784257671049, 0.0069002550677943345, 0.01162569087097389], "conf": 0.5406}, {"text": "\u5341", "box": [0.1927507047925896, 0.7955784257671049, 0.0069002550677943345, 0.01162569087097389], "conf": 0.5406}, {"text": "\u9019", "box": [0.19965095986038395, 0.7955784257671049, 0.0069002550677943345, 0.01162569087097389], "conf": 0.5406}, {"text": "\u5f97", "box": [0.20655121492817827, 0.7955784257671049, 0.0069002550677943345, 0.01162569087097389], "conf": 0.5406}, {"text": "\u5e38", "box": [0.22035172506376696, 0.7955784257671049, 0.0069002550677943345, 0.01162569087097389], "conf": 0.5406}, {"text": "\u570b", "box": [0.22725198013156128, 0.7955784257671049, 0.0069002550677943345, 0.01162569087097389], "conf": 0.5406}, {"text": "\u5716", "box": [0.23415223519935563, 0.7955784257671049, 0.0069002550677943345, 0.01162569087097389], "conf": 0.5406}, {"text": "\u528d", "box": [0.24105249026714995, 0.7955784257671049, 0.0069002550677943345, 0.01162569087097389], "conf": 0.5406}, {"text": "\u3002", "box": [0.2479527453349443, 0.7955784257671049, 0.0069002550677943345, 0.01162569087097389], "conf": 0.5406}, {"text": "\u957f", "box": [0.2548530004027386, 0.7955784257671049, 0.0069002550677943345, 0.01162569087097389], "conf": 0.5406}, {"text": "\u8077", "box": [0.26175325547053296, 0.7955784257671049, 0.0069002550677943345, 0.01162569087097389], "conf": 0.5406}, {"text": "T7IH", "box": [0.1731641831118271, 0.8449590242043072, 0.02934420727614445, 0.010482180293501049], "conf": 0.7547}, {"text": "JS", "box": [0.2538606524365687, 0.8449590242043072, 0.014672036514968453, 0.010482180293501049], "conf": 0.7547}, {"text": "VlO", "box": [0.17203651496845215, 0.8567943586811512, 0.019524768425291984, 0.011682866399847532], "conf": 0.5575}, {"text": "T", "box": [0.2175943079608001, 0.8567943586811512, 0.006508256141763995, 0.011682866399847532], "conf": 0.5575}, {"text": "I8", "box": [0.2241025641025641, 0.8567943586811512, 0.01301651228352799, 0.011682866399847532], "conf": 0.5575}, {"text": "\u300b", "box": [0.2371190763860921, 0.8567943586811512, 0.006508256141763995, 0.011682866399847532], "conf": 0.5575}, {"text": "\u7b2c", "box": [0.2436273325278561, 0.8567943586811512, 0.006508256141763995, 0.011682866399847532], "conf": 0.5575}, {"text": "\u7387", "box": [0.2501355886696201, 0.8567943586811512, 0.006508256141763995, 0.011682866399847532], "conf": 0.5575}, {"text": "\u9886", "box": [0.2566438448113841, 0.8567943586811512, 0.006508256141763995, 0.011682866399847532], "conf": 0.5575}, {"text": "\u5916", "box": [0.26315210095314806, 0.8567943586811512, 0.006508256141763995, 0.011682866399847532], "conf": 0.5575}, {"text": "\u2022.", "box": [0.2778493757551349, 0.22510005717552886, 0.013209826822392268, 0.011854392986468459], "conf": 0.5521}, {"text": "|-\u0995", "box": [0.33240703450127534, 0.22510005717552886, 0.03387031816351188, 0.011854392986468459], "conf": 0.5521}, {"text": "\u2022", "box": [0.32538595784669083, 0.24892319420621306, 0.006620217478856222, 0.010768057937869259], "conf": 0.5791}, {"text": "\u6bd4", "box": [0.33200617532554705, 0.24892319420621306, 0.006620217478856222, 0.010768057937869259], "conf": 0.5791}, {"text": "\u806f", "box": [0.33862652705061086, 0.24892319420621306, 0.006620217478856222, 0.010768057937869259], "conf": 0.5791}, {"text": "\u5408", "box": [0.345246744529467, 0.24892319420621306, 0.006620217478856222, 0.010768057937869259], "conf": 0.5791}, {"text": "\u5341", "box": [0.35186696200832324, 0.24892319420621306, 0.006620217478856222, 0.010768057937869259], "conf": 0.5791}, {"text": "\u65e5", "box": [0.3584871794871795, 0.24892319420621306, 0.006620217478856222, 0.010768057937869259], "conf": 0.5791}, {"text": "\u7b97", "box": [0.36510753121224326, 0.24892319420621306, 0.006620217478856222, 0.010768057937869259], "conf": 0.5791}, {"text": "|a|t|", "box": [0.29632165391327697, 0.39889460644177627, 0.055403409853671634, 0.010958643034114732], "conf": 0.5456}, {"text": "\u2022", "box": [0.35955161766680094, 0.4715837621497999, 0.0040229561014901325, 0.009719839908519153], "conf": 0.6296}, {"text": "\u2022", "box": [0.35955161766680094, 0.5190585096245474, 0.006034367029131427, 0.009738898418143701], "conf": 0.8566}, {"text": "i", "box": [0.36558598469593234, 0.5190585096245474, 0.006034367029131427, 0.009738898418143701], "conf": 0.8566}, {"text": "YG", "box": [0.2771781447174117, 0.6840099104250048, 0.014566787488253456, 0.012064036592338479], "conf": 0.5292}, {"text": "8P4PP", "box": [0.33544516042421807, 0.6840099104250048, 0.0364168344744261, 0.012064036592338479], "conf": 0.5292}, {"text": "kVHUV?", "box": [0.32652705061082027, 0.7684962835906233, 0.0474694589877836, 0.01320754716981132], "conf": 0.5678}, {"text": "8O:", "box": [0.34630272519801314, 0.9004764627406138, 0.021330514162974896, 0.009910425004764627], "conf": 0.8196}, {"text": "9?9", "box": [0.5559135454423413, 0.031808652563369545, 0.018485702778896496, 0.009357728225652754], "conf": 0.6796}, {"text": "\u2022", "box": [0.4336823734729494, 0.05616542786354107, 0.006681031010873943, 0.009624547360396416], "conf": 0.5635}, {"text": "\u5efa", "box": [0.44036340448382333, 0.05616542786354107, 0.006681031010873943, 0.009624547360396416], "conf": 0.5635}, {"text": "\u662f", "box": [0.4470443012484897, 0.05616542786354107, 0.006681031010873943, 0.009624547360396416], "conf": 0.5635}, {"text": "\u57fa", "box": [0.4537253322593637, 0.05616542786354107, 0.006681031010873943, 0.009624547360396416], "conf": 0.5635}, {"text": "\u78bc", "box": [0.4604063632702376, 0.05616542786354107, 0.006681031010873943, 0.009624547360396416], "conf": 0.5635}, {"text": "\u6d89", "box": [0.46708726003490403, 0.05616542786354107, 0.006681031010873943, 0.009624547360396416], "conf": 0.5635}, {"text": "\u2022", "box": [0.4286749899315344, 0.09327234610253478, 0.006298026580749094, 0.00960548885077187], "conf": 0.5651}, {"text": "\u767c", "box": [0.43497301651228354, 0.09327234610253478, 0.006298026580749094, 0.00960548885077187], "conf": 0.5651}, {"text": "\u806f", "box": [0.44127117733924015, 0.09327234610253478, 0.006298026580749094, 0.00960548885077187], "conf": 0.5651}, {"text": "\u6bd4", "box": [0.4475692039199893, 0.09327234610253478, 0.006298026580749094, 0.00960548885077187], "conf": 0.5651}, {"text": "\u5bf6", "box": [0.45386723050073835, 0.09327234610253478, 0.006298026580749094, 0.00960548885077187], "conf": 0.5651}, {"text": "\u756b", "box": [0.4601652570814875, 0.09327234610253478, 0.006298026580749094, 0.00960548885077187], "conf": 0.5651}, {"text": "\u3002", "box": [0.4664634179084441, 0.09327234610253478, 0.006298026580749094, 0.00960548885077187], "conf": 0.5651}, {"text": "\u81fa", "box": [0.3794469056249161, 0.19140461215932913, 0.006891663310511478, 0.011034877072612921], "conf": 0.5078}, {"text": "|", "box": [0.38633856893542756, 0.19140461215932913, 0.006891663310511478, 0.011034877072612921], "conf": 0.5078}, {"text": "\u6807", "box": [0.39323009799973146, 0.19140461215932913, 0.006891663310511478, 0.011034877072612921], "conf": 0.5078}, {"text": "\u9078", "box": [0.400121761310243, 0.19140461215932913, 0.006891663310511478, 0.011034877072612921], "conf": 0.5078}, {"text": "\u3002", "box": [0.40701342462075446, 0.19140461215932913, 0.006891663310511478, 0.011034877072612921], "conf": 0.5078}, {"text": "\u570b", "box": [0.41390508793126596, 0.19140461215932913, 0.006891663310511478, 0.011034877072612921], "conf": 0.5078}, {"text": "\u610f", "box": [0.4207966169955699, 0.19140461215932913, 0.006891663310511478, 0.011034877072612921], "conf": 0.5078}, {"text": "\u975e", "box": [0.42768828030608136, 0.19140461215932913, 0.006891663310511478, 0.011034877072612921], "conf": 0.5078}, {"text": "\u52a0", "box": [0.43457994361659286, 0.19140461215932913, 0.006891663310511478, 0.011034877072612921], "conf": 0.5078}, {"text": "\u9762", "box": [0.4414714726808968, 0.19140461215932913, 0.006891663310511478, 0.011034877072612921], "conf": 0.5078}, {"text": "\u201c", "box": [0.44836313599140826, 0.19140461215932913, 0.006891663310511478, 0.011034877072612921], "conf": 0.5078}, {"text": "\u5e74", "box": [0.45525479930191975, 0.19140461215932913, 0.006891663310511478, 0.011034877072612921], "conf": 0.5078}, {"text": "AV", "box": [0.4621464626124312, 0.19140461215932913, 0.013783192374815413, 0.011034877072612921], "conf": 0.5078}, {"text": "\u2018TIL", "box": [0.44270371861994895, 0.22879740804269105, 0.027037186199489867, 0.009433962264150943], "conf": 0.529}, {"text": "L", "box": [0.42279500604107934, 0.24097579569277683, 0.007966169955698751, 0.008366685725176291], "conf": 0.7598}, {"text": "T", "box": [0.43076117599677805, 0.24097579569277683, 0.007966169955698751, 0.008366685725176291], "conf": 0.7598}, {"text": "I", "box": [0.44669351590817563, 0.24097579569277683, 0.007966169955698751, 0.008366685725176291], "conf": 0.7598}, {"text": "H", "box": [0.4546596858638744, 0.24097579569277683, 0.007966169955698751, 0.008366685725176291], "conf": 0.7598}, {"text": "AVHLVO", "box": [0.4328542086186065, 0.2526396035829998, 0.044028594442207004, 0.010596531351248332], "conf": 0.7142}, {"text": "\u4e00", "box": [0.4097635924285139, 0.3061940156279779, 0.006807222445965901, 0.010215361158757385], "conf": 0.5477}, {"text": "8", "box": [0.4165708148744798, 0.3061940156279779, 0.006807222445965901, 0.010215361158757385], "conf": 0.5477}, {"text": "\u53bb", "box": [0.4233780373204457, 0.3061940156279779, 0.006807222445965901, 0.010215361158757385], "conf": 0.5477}, {"text": "\u5361", "box": [0.4301852597664116, 0.3061940156279779, 0.006807222445965901, 0.010215361158757385], "conf": 0.5477}, {"text": "\u4e00", "box": [0.4369924822123775, 0.3061940156279779, 0.006807222445965901, 0.010215361158757385], "conf": 0.5477}, {"text": "\u540d", "box": [0.4437997046583434, 0.3061940156279779, 0.006807222445965901, 0.010215361158757385], "conf": 0.5477}, {"text": "TT", "box": [0.4506069271043093, 0.3061940156279779, 0.013614444891931803, 0.010215361158757385], "conf": 0.5477}, {"text": "\u51ef", "box": [0.4642215062424486, 0.3061940156279779, 0.006807222445965901, 0.010215361158757385], "conf": 0.5477}, {"text": "\u601d", "box": [0.47102872868841456, 0.3061940156279779, 0.006807222445965901, 0.010215361158757385], "conf": 0.5477}, {"text": "2", "box": [0.40970600080547726, 0.3306842004955212, 0.006621694187139214, 0.008976558033161807], "conf": 0.8114}, {"text": "1", "box": [0.41632769499261646, 0.3306842004955212, 0.006621694187139214, 0.008976558033161807], "conf": 0.8114}, {"text": "6", "box": [0.4229493891797557, 0.3306842004955212, 0.006621694187139214, 0.008976558033161807], "conf": 0.8114}, {"text": "-", "box": [0.4361927775540341, 0.3306842004955212, 0.006621694187139214, 0.008976558033161807], "conf": 0.8114}, {"text": "8", "box": [0.44281447174117333, 0.3306842004955212, 0.006621694187139214, 0.008976558033161807], "conf": 0.8114}, {"text": "9", "box": [0.44943616592831254, 0.3306842004955212, 0.006621694187139214, 0.008976558033161807], "conf": 0.8114}, {"text": "8", "box": [0.45605786011545174, 0.3306842004955212, 0.006621694187139214, 0.008976558033161807], "conf": 0.8114}, {"text": "\u2022", "box": [0.5410390656463955, 0.35258242805412615, 0.006381124983219224, 0.010482180293501049], "conf": 0.5389}, {"text": "\u8a8d", "box": [0.5474201906296148, 0.35258242805412615, 0.006381124983219224, 0.010482180293501049], "conf": 0.5389}, {"text": "\u6e38", "box": [0.5538014498590415, 0.35258242805412615, 0.006381124983219224, 0.010482180293501049], "conf": 0.5389}, {"text": "\u6eff", "box": [0.5601825748422607, 0.35258242805412615, 0.006381124983219224, 0.010482180293501049], "conf": 0.5389}, {"text": "\u671f", "box": [0.5665636998254798, 0.35258242805412615, 0.006381124983219224, 0.010482180293501049], "conf": 0.5389}, {"text": "\u3002", "box": [0.5729449590549067, 0.35258242805412615, 0.006381124983219224, 0.010482180293501049], "conf": 0.5389}, {"text": "R|||||>", "box": [0.48778359511343805, 0.36439870402134555, 0.07266747214391193, 0.012044978082713933], "conf": 0.5224}, {"text": "\u2022", "box": [0.5139616055846422, 0.3888507718696398, 0.007376023627332529, 0.01069182389937107], "conf": 0.5484}, {"text": "\u4e66", "box": [0.5213376292119748, 0.3888507718696398, 0.007376023627332529, 0.01069182389937107], "conf": 0.5484}, {"text": "\u8a08", "box": [0.5287137870855149, 0.3888507718696398, 0.007376023627332529, 0.01069182389937107], "conf": 0.5484}, {"text": "\u806f", "box": [0.5360898107128473, 0.3888507718696398, 0.007376023627332529, 0.01069182389937107], "conf": 0.5484}, {"text": "\u9019", "box": [0.5508419922137199, 0.3888507718696398, 0.007376023627332529, 0.01069182389937107], "conf": 0.5484}, {"text": "\u8fa6", "box": [0.5582181500872601, 0.3888507718696398, 0.007376023627332529, 0.01069182389937107], "conf": 0.5484}, {"text": "\u3002", "box": [0.5655941737145925, 0.3888507718696398, 0.007376023627332529, 0.01069182389937107], "conf": 0.5484}, {"text": "\u5bc4", "box": [0.5729703315881326, 0.3888507718696398, 0.007376023627332529, 0.01069182389937107], "conf": 0.5484}, {"text": "\u65c5", "box": [0.48570277889649616, 0.4137602439489232, 0.004363001745200698, 0.009910425004764627], "conf": 0.5436}, {"text": "|", "box": [0.500168344744261, 0.4128073184676958, 0.013535239629480467, 0.011435105774728416], "conf": 0.5436}, {"text": "\u570b", "box": [0.5139511343804537, 0.4128073184676958, 0.008559538193046046, 0.011435105774728416], "conf": 0.5436}, {"text": "\u67e5", "box": [0.5225106725734998, 0.4128073184676958, 0.005797019734192509, 0.011435105774728416], "conf": 0.5436}, {"text": "\u4f8b", "box": [0.5283076923076924, 0.4128073184676958, 0.005797019734192509, 0.011435105774728416], "conf": 0.5436}, {"text": "\u5609", "box": [0.5341045777956773, 0.4128073184676958, 0.005797019734192509, 0.011435105774728416], "conf": 0.5436}, {"text": "\u3002", "box": [0.5399015975298698, 0.4128073184676958, 0.005797019734192509, 0.011435105774728416], "conf": 0.5436}, {"text": "\u8b70", "box": [0.5456986172640623, 0.4128073184676958, 0.005797019734192509, 0.011435105774728416], "conf": 0.5436}, {"text": "\u990a", "box": [0.5514956369982549, 0.4128073184676958, 0.005797019734192509, 0.011435105774728416], "conf": 0.5436}, {"text": "\u8077", "box": [0.5572926567324473, 0.4128073184676958, 0.005797019734192509, 0.011435105774728416], "conf": 0.5436}, {"text": "\u3002", "box": [0.5630896764666398, 0.4128073184676958, 0.005797019734192509, 0.011435105774728416], "conf": 0.5436}, {"text": "\u8b70", "box": [0.5688865619546248, 0.4128073184676958, 0.005797019734192509, 0.011435105774728416], "conf": 0.5436}, {"text": "\u65cf", "box": [0.5746835816888173, 0.4128073184676958, 0.005797019734192509, 0.011435105774728416], "conf": 0.5436}, {"text": "\u55bb", "box": [0.49724795274533495, 0.4533257099294835, 0.011961337092227143, 0.017209834190966267], "conf": 0.5221}, {"text": "\u7522", "box": [0.5092092898375621, 0.4533257099294835, 0.011961337092227143, 0.017209834190966267], "conf": 0.5221}, {"text": "\u5373", "box": [0.5211706269297892, 0.4533257099294835, 0.011961337092227143, 0.017209834190966267], "conf": 0.5221}, {"text": "\u57fa", "box": [0.5331319640220165, 0.4533257099294835, 0.011961337092227143, 0.017209834190966267], "conf": 0.5221}, {"text": "\u4e03", "box": [0.5450933011142436, 0.4533257099294835, 0.011961337092227143, 0.017209834190966267], "conf": 0.5221}, {"text": "\u5e63", "box": [0.5570546382064707, 0.4533257099294835, 0.011961337092227143, 0.017209834190966267], "conf": 0.5221}, {"text": "\u4e00", "box": [0.5265136259900658, 0.47566228320945303, 0.007115048999865754, 0.009586430341147322], "conf": 0.5563}, {"text": "8", "box": [0.5336286749899315, 0.47566228320945303, 0.007115048999865754, 0.009586430341147322], "conf": 0.5563}, {"text": "\u674e", "box": [0.5407437239897973, 0.47566228320945303, 0.007115048999865754, 0.009586430341147322], "conf": 0.5563}, {"text": "8", "box": [0.547858772989663, 0.47566228320945303, 0.007115048999865754, 0.009586430341147322], "conf": 0.5563}, {"text": "\u201c", "box": [0.5549738219895288, 0.47566228320945303, 0.007115048999865754, 0.009586430341147322], "conf": 0.5563}, {"text": "\u7121", "box": [0.5620888709893945, 0.47566228320945303, 0.007115048999865754, 0.009586430341147322], "conf": 0.5563}, {"text": "I", "box": [0.5272251308900524, 0.5000190585096246, 0.007841857967512418, 0.00851915380217267], "conf": 0.539}, {"text": "T", "box": [0.5350669888575648, 0.5000190585096246, 0.007841857967512418, 0.00851915380217267], "conf": 0.539}, {"text": "3", "box": [0.5429089810712847, 0.5000190585096246, 0.007841857967512418, 0.00851915380217267], "conf": 0.539}, {"text": "X", "box": [0.5585926970063096, 0.5000190585096246, 0.007841857967512418, 0.00851915380217267], "conf": 0.539}, {"text": "A", "box": [0.566434554973822, 0.5000190585096246, 0.007841857967512418, 0.00851915380217267], "conf": 0.539}, {"text": "G", "box": [0.574276547187542, 0.5000190585096246, 0.007841857967512418, 0.00851915380217267], "conf": 0.539}, {"text": "\u566a", "box": [0.39795945764532153, 0.5430150562226034, 0.016864679822795006, 0.015856680007623403], "conf": 0.5419}, {"text": "\u5718", "box": [0.4316888172909115, 0.5430150562226034, 0.016864679822795006, 0.015856680007623403], "conf": 0.5419}, {"text": "\u5802", "box": [0.44855349711370657, 0.5430150562226034, 0.016864679822795006, 0.015856680007623403], "conf": 0.5419}, {"text": "*", "box": [0.4877164720096657, 0.5469792262245092, 0.006041079339508659, 0.010024776062511911], "conf": 0.5586}, {"text": "\u98df", "box": [0.4937575513491744, 0.5469792262245092, 0.006041079339508659, 0.010024776062511911], "conf": 0.5586}, {"text": "\u8077", "box": [0.499798630688683, 0.5469792262245092, 0.006041079339508659, 0.010024776062511911], "conf": 0.5586}, {"text": "\u5ba4", "box": [0.5058397100281917, 0.5469792262245092, 0.006041079339508659, 0.010024776062511911], "conf": 0.5586}, {"text": "\u8fb2", "box": [0.48468250771915694, 0.5591004383457213, 0.00680628272251309, 0.010310653706880122], "conf": 0.514}, {"text": "\u904e", "box": [0.49148879044167, 0.5591004383457213, 0.00680628272251309, 0.010310653706880122], "conf": 0.514}, {"text": "\u5b9c", "box": [0.5051013558866962, 0.5591004383457213, 0.00680628272251309, 0.010310653706880122], "conf": 0.514}, {"text": "\u2013", "box": [0.4857967512417774, 0.6330665141985896, 0.006249160961202846, 0.009300552696779112], "conf": 0.674}, {"text": "8", "box": [0.4920459122029803, 0.6330665141985896, 0.006249160961202846, 0.009300552696779112], "conf": 0.674}, {"text": "V", "box": [0.49829507316418314, 0.6330665141985896, 0.006249160961202846, 0.009300552696779112], "conf": 0.674}, {"text": "\u0924", "box": [0.504544234125386, 0.6330665141985896, 0.006249160961202846, 0.009300552696779112], "conf": 0.674}, {"text": "11", "box": [0.4866425023493086, 0.6870592719649323, 0.015536716337763459, 0.010748999428244711], "conf": 0.7421}, {"text": "2", "box": [0.5021792186870722, 0.6870592719649323, 0.007768425291985501, 0.010748999428244711], "conf": 0.7421}, {"text": "H", "box": [0.3804940260437643, 0.7399847531923003, 0.006884951000134246, 0.010558414331999237], "conf": 0.538}, {"text": "\u4e66", "box": [0.38737897704389845, 0.7399847531923003, 0.006884951000134246, 0.010558414331999237], "conf": 0.538}, {"text": "09", "box": [0.3942637937978252, 0.7399847531923003, 0.013769767754060948, 0.010558414331999237], "conf": 0.538}, {"text": ".", "box": [0.40803369579809373, 0.7399847531923003, 0.006884951000134246, 0.010558414331999237], "conf": 0.538}, {"text": "8", "box": [0.41491864679822793, 0.7399847531923003, 0.006884951000134246, 0.010558414331999237], "conf": 0.538}, {"text": "T", "box": [0.42180346355215464, 0.7399847531923003, 0.006884951000134246, 0.010558414331999237], "conf": 0.538}, {"text": "\u6562", "box": [0.4286884145522889, 0.7399847531923003, 0.006884951000134246, 0.010558414331999237], "conf": 0.538}, {"text": "\u6b32", "box": [0.4355733655524231, 0.7399847531923003, 0.006884951000134246, 0.010558414331999237], "conf": 0.538}, {"text": "\u3002", "box": [0.44245818230634987, 0.7399847531923003, 0.006884951000134246, 0.010558414331999237], "conf": 0.538}, {"text": "\u806f", "box": [0.4493431333064841, 0.7399847531923003, 0.006884951000134246, 0.010558414331999237], "conf": 0.538}, {"text": "|", "box": [0.4562280843066184, 0.7399847531923003, 0.006884951000134246, 0.010558414331999237], "conf": 0.538}, {"text": "\u5341", "box": [0.4631130353067526, 0.7399847531923003, 0.006884951000134246, 0.010558414331999237], "conf": 0.538}, {"text": "\u7ae0", "box": [0.4699978520606793, 0.7399847531923003, 0.006884951000134246, 0.010558414331999237], "conf": 0.538}, {"text": "|", "box": [0.4816619680494026, 0.7686868686868688, 0.005651765337629212, 0.010520297312750143], "conf": 0.7641}, {"text": "6", "box": [0.5154593905222178, 0.7673337145035258, 0.0063919989260303395, 0.010958643034114732], "conf": 0.5574}, {"text": ".", "box": [0.5218513894482482, 0.7673337145035258, 0.0063919989260303395, 0.010958643034114732], "conf": 0.5574}, {"text": "6", "box": [0.528243522620486, 0.7673337145035258, 0.0063919989260303395, 0.010958643034114732], "conf": 0.5574}, {"text": "8", "box": [0.5346355215465163, 0.7673337145035258, 0.0063919989260303395, 0.010958643034114732], "conf": 0.5574}, {"text": "\u985e", "box": [0.5410275204725467, 0.7673337145035258, 0.0063919989260303395, 0.010958643034114732], "conf": 0.5574}, {"text": "\u5c40", "box": [0.5474196536447845, 0.7673337145035258, 0.0063919989260303395, 0.010958643034114732], "conf": 0.5574}, {"text": "\u8a0a", "box": [0.5538116525708149, 0.7673337145035258, 0.0063919989260303395, 0.010958643034114732], "conf": 0.5574}, {"text": "*", "box": [0.5602036514968453, 0.7673337145035258, 0.0063919989260303395, 0.010958643034114732], "conf": 0.5574}, {"text": "\u56de", "box": [0.5665956504228755, 0.7673337145035258, 0.0063919989260303395, 0.010958643034114732], "conf": 0.5574}, {"text": "\u54e5", "box": [0.5729877835951134, 0.7673337145035258, 0.0063919989260303395, 0.010958643034114732], "conf": 0.5574}, {"text": "\u51fa", "box": [0.48201100818901865, 0.7808271393177053, 0.00557121761310243, 0.012578616352201259], "conf": 0.5869}, {"text": "11", "box": [0.48758222580212107, 0.7808271393177053, 0.01114243522620486, 0.012578616352201259], "conf": 0.5869}, {"text": "-", "box": [0.49872466102832597, 0.7808271393177053, 0.00557121761310243, 0.012578616352201259], "conf": 0.5869}, {"text": "\u2013", "box": [0.5218513894482482, 0.7793977510958643, 0.0063919989260303395, 0.01097770154373928], "conf": 0.5119}, {"text": "18", "box": [0.528243522620486, 0.7793977510958643, 0.012784132098268224, 0.01097770154373928], "conf": 0.5119}, {"text": "\u4e59", "box": [0.5410275204725467, 0.7793977510958643, 0.0063919989260303395, 0.01097770154373928], "conf": 0.5119}, {"text": "\u8077", "box": [0.5474196536447845, 0.7793977510958643, 0.0063919989260303395, 0.01097770154373928], "conf": 0.5119}, {"text": "\u5c1a", "box": [0.5538116525708149, 0.7793977510958643, 0.0063919989260303395, 0.01097770154373928], "conf": 0.5119}, {"text": "\uff0c", "box": [0.5602036514968453, 0.7793977510958643, 0.0063919989260303395, 0.01097770154373928], "conf": 0.5119}, {"text": "\u667a", "box": [0.5665956504228755, 0.7793977510958643, 0.0063919989260303395, 0.01097770154373928], "conf": 0.5119}, {"text": "\u90e8", "box": [0.5729877835951134, 0.7793977510958643, 0.0063919989260303395, 0.01097770154373928], "conf": 0.5119}, {"text": "\u2022", "box": [0.41052490267149955, 0.830569849437774, 0.006150892737280172, 0.010863350485991996], "conf": 0.56195}, {"text": "*", "box": [0.41667579540877975, 0.830569849437774, 0.006150892737280172, 0.010863350485991996], "conf": 0.56195}, {"text": "\u76e3", "box": [0.4228266881460599, 0.830569849437774, 0.006150892737280172, 0.010863350485991996], "conf": 0.56195}, {"text": "\u85cf", "box": [0.4289777151295476, 0.830569849437774, 0.006150892737280172, 0.010863350485991996], "conf": 0.56195}, {"text": "\u3002", "box": [0.4351286078668278, 0.830569849437774, 0.006150892737280172, 0.010863350485991996], "conf": 0.56195}, {"text": "\u96c5", "box": [0.4474303933413881, 0.830569849437774, 0.006150892737280172, 0.010863350485991996], "conf": 0.56195}, {"text": "\u9031", "box": [0.45358128607866827, 0.830569849437774, 0.006150892737280172, 0.010863350485991996], "conf": 0.56195}, {"text": "\u671f", "box": [0.45973217881594847, 0.830569849437774, 0.006150892737280172, 0.010863350485991996], "conf": 0.56195}, {"text": "\u5982", "box": [0.46588320579943615, 0.830569849437774, 0.006150892737280172, 0.010863350485991996], "conf": 0.56195}, {"text": "\u98a8", "box": [0.4720340985367163, 0.830569849437774, 0.009103101087394282, 0.010863350485991996], "conf": 0.56195}, {"text": "-", "box": [0.4814081084709357, 0.830569849437774, 0.009127533897167405, 0.010863350485991996], "conf": 0.56195}, {"text": "\u8139", "box": [0.38238689757014366, 0.8677148846960167, 0.0068282991005504095, 0.011606632361349341], "conf": 0.6029}, {"text": "\u9732", "box": [0.3892151966706941, 0.8677148846960167, 0.0068282991005504095, 0.011606632361349341], "conf": 0.6029}, {"text": "\u5ae9", "box": [0.396043630017452, 0.8677148846960167, 0.0068282991005504095, 0.011606632361349341], "conf": 0.6029}, {"text": "\u3002", "box": [0.4028719291180024, 0.8677148846960167, 0.0068282991005504095, 0.011606632361349341], "conf": 0.6029}, {"text": "\u91cf", "box": [0.40970022821855284, 0.8677148846960167, 0.0068282991005504095, 0.011606632361349341], "conf": 0.6029}, {"text": "|", "box": [0.4165285273191032, 0.8677148846960167, 0.0068282991005504095, 0.011606632361349341], "conf": 0.6029}, {"text": "\u6b63", "box": [0.4301852597664116, 0.8677148846960167, 0.0068282991005504095, 0.011606632361349341], "conf": 0.6029}, {"text": "\u4ec0", "box": [0.43701355886696197, 0.8677148846960167, 0.0068282991005504095, 0.011606632361349341], "conf": 0.6029}, {"text": "\u5609", "box": [0.44384199221371995, 0.8677148846960167, 0.0068282991005504095, 0.011606632361349341], "conf": 0.6029}, {"text": "\u4e2d", "box": [0.4506702913142704, 0.8677148846960167, 0.0068282991005504095, 0.011606632361349341], "conf": 0.6029}, {"text": "\u57fa", "box": [0.4574985904148208, 0.8677148846960167, 0.0068282991005504095, 0.011606632361349341], "conf": 0.6029}, {"text": "\u8fa6", "box": [0.4643268895153712, 0.8677148846960167, 0.0068282991005504095, 0.011606632361349341], "conf": 0.6029}, {"text": "\u7b49", "box": [0.47115532286212913, 0.8677148846960167, 0.0068282991005504095, 0.011606632361349341], "conf": 0.6029}, {"text": "\u0416->\u09b7", "box": [0.48363538730030875, 0.9089003239946636, 0.026325681299503287, 0.0108252334667429], "conf": 0.5182}, {"text": "\u64da", "box": [0.4846153846153846, 0.9212883552506194, 0.006843200429587864, 0.011015818562988373], "conf": 0.5794}, {"text": "\u8d44", "box": [0.4914585850449725, 0.9212883552506194, 0.006843200429587864, 0.011015818562988373], "conf": 0.5794}, {"text": "69D", "box": [0.6236183380319505, 0.18094149037545262, 0.020083232648677674, 0.01032971221650467], "conf": 0.6946}, {"text": "-", "box": [0.6437015706806283, 0.18094149037545262, 0.006694455631628406, 0.01032971221650467], "conf": 0.6946}, {"text": "*", "box": [0.6662773526647873, 0.24823708785972937, 0.006748154114646261, 0.0104631217838765], "conf": 0.6478}, {"text": "\u806f", "box": [0.6797735266478722, 0.24823708785972937, 0.006748154114646261, 0.0104631217838765], "conf": 0.6478}, {"text": "\u90e8", "box": [0.5880252382870184, 0.3888888888888889, 0.006756477379514029, 0.011435105774728416], "conf": 0.5327}, {"text": "\u76df", "box": [0.5947817156665325, 0.3888888888888889, 0.006756477379514029, 0.011435105774728416], "conf": 0.5327}, {"text": "\u3010", "box": [0.6015380587998389, 0.3888888888888889, 0.006756477379514029, 0.011435105774728416], "conf": 0.5327}, {"text": "\u7b2c", "box": [0.6082945361793529, 0.3888888888888889, 0.006756477379514029, 0.011435105774728416], "conf": 0.5327}, {"text": "|", "box": [0.6150508793126594, 0.3888888888888889, 0.006756477379514029, 0.011435105774728416], "conf": 0.5327}, {"text": "\u3010", "box": [0.6218073566921735, 0.3888888888888889, 0.006756477379514029, 0.011435105774728416], "conf": 0.5327}, {"text": "\u4e00", "box": [0.62856369982548, 0.3888888888888889, 0.006756477379514029, 0.011435105774728416], "conf": 0.5327}, {"text": "\u4ee5", "box": [0.635320177204994, 0.3888888888888889, 0.006756477379514029, 0.011435105774728416], "conf": 0.5327}, {"text": "\u7f69", "box": [0.6420766545845079, 0.3888888888888889, 0.006756477379514029, 0.011435105774728416], "conf": 0.5327}, {"text": "\u53e3", "box": [0.6488329977178144, 0.3888888888888889, 0.006756477379514029, 0.011435105774728416], "conf": 0.5327}, {"text": "\u4e00", "box": [0.6555894750973285, 0.3888888888888889, 0.006756477379514029, 0.011435105774728416], "conf": 0.5327}, {"text": "|", "box": [0.662345818230635, 0.3888888888888889, 0.006756477379514029, 0.011435105774728416], "conf": 0.5327}, {"text": "|", "box": [0.669102295610149, 0.3888888888888889, 0.006756477379514029, 0.011435105774728416], "conf": 0.5327}, {"text": "|", "box": [0.6758586387434554, 0.3888888888888889, 0.006756477379514029, 0.011435105774728416], "conf": 0.5327}, {"text": "\u2022", "box": [0.6100953148073568, 0.4758528683056985, 0.006772049939589206, 0.011187345149609302], "conf": 0.5046}, {"text": "\u91ab", "box": [0.6168673647469459, 0.4758528683056985, 0.006772049939589206, 0.011187345149609302], "conf": 0.5046}, {"text": "\u9ea5", "box": [0.6236395489327426, 0.4758528683056985, 0.006772049939589206, 0.011187345149609302], "conf": 0.5046}, {"text": "\u57fa", "box": [0.6304115988723318, 0.4758528683056985, 0.006772049939589206, 0.011187345149609302], "conf": 0.5046}, {"text": "\u9732", "box": [0.6371837830581285, 0.4758528683056985, 0.006772049939589206, 0.011187345149609302], "conf": 0.5046}, {"text": "\u6279", "box": [0.6439558329977179, 0.4758528683056985, 0.006772049939589206, 0.011187345149609302], "conf": 0.5046}, {"text": "\u7063", "box": [0.6507280171835146, 0.4758528683056985, 0.006772049939589206, 0.011187345149609302], "conf": 0.5046}, {"text": "\u3002", "box": [0.6575000671231037, 0.4758528683056985, 0.006772049939589206, 0.011187345149609302], "conf": 0.5046}, {"text": "\u5712", "box": [0.6642722513089004, 0.4758528683056985, 0.006772049939589206, 0.011187345149609302], "conf": 0.5046}, {"text": "\u5bdf", "box": [0.6710443012484898, 0.4758528683056985, 0.006772049939589206, 0.011187345149609302], "conf": 0.5046}, {"text": "\u5834", "box": [0.6778164854342865, 0.4758528683056985, 0.006772049939589206, 0.011187345149609302], "conf": 0.5046}, {"text": "3", "box": [0.6555242314404618, 0.5444825614636936, 0.006930460464491878, 0.007966457023060796], "conf": 0.5399}, {"text": "\u0935", "box": [0.6624546919049537, 0.5444825614636936, 0.006930460464491878, 0.007966457023060796], "conf": 0.5399}, {"text": "91", "box": [0.595167136528393, 0.5927387078330474, 0.011776077325815546, 0.01025347817800648], "conf": 0.5235}, {"text": ".", "box": [0.6069432138542086, 0.5927387078330474, 0.005888038662907773, 0.01025347817800648], "conf": 0.5235}, {"text": "0", "box": [0.6128312525171163, 0.5927387078330474, 0.005888038662907773, 0.01025347817800648], "conf": 0.5235}, {"text": ".", "box": [0.6187192911800242, 0.5927387078330474, 0.005888038662907773, 0.01025347817800648], "conf": 0.5235}, {"text": "8", "box": [0.6246073298429319, 0.5927387078330474, 0.005888038662907773, 0.01025347817800648], "conf": 0.5235}, {"text": "\uff1a", "box": [0.6304953685058398, 0.5927387078330474, 0.005888038662907773, 0.01025347817800648], "conf": 0.5235}, {"text": "\u9732", "box": [0.6363834071687475, 0.5927387078330474, 0.005888038662907773, 0.01025347817800648], "conf": 0.5235}, {"text": "\u51fa", "box": [0.6422714458316552, 0.5927387078330474, 0.005888038662907773, 0.01025347817800648], "conf": 0.5235}, {"text": "\u3002", "box": [0.6481594844945631, 0.5927387078330474, 0.005888038662907773, 0.01025347817800648], "conf": 0.5235}, {"text": "\u537b", "box": [0.6540475231574708, 0.5927387078330474, 0.005888038662907773, 0.01025347817800648], "conf": 0.5235}, {"text": "\u4e66", "box": [0.6599355618203785, 0.5927387078330474, 0.005888038662907773, 0.01025347817800648], "conf": 0.5235}, {"text": "\u6b64", "box": [0.6658236004832864, 0.5927387078330474, 0.005888038662907773, 0.01025347817800648], "conf": 0.5235}, {"text": "\u8077", "box": [0.6717116391461941, 0.5927387078330474, 0.005888038662907773, 0.01025347817800648], "conf": 0.5235}, {"text": "2", "box": [0.6775996778091018, 0.5927387078330474, 0.005888038662907773, 0.01025347817800648], "conf": 0.5235}, {"text": "W", "box": [0.6763435360451067, 0.6178197064989518, 0.008003356155188615, 0.008824089956165427], "conf": 0.5863}, {"text": "N", "box": [0.5893945496039736, 0.6300743281875357, 0.006655255739025373, 0.009167143129407281], "conf": 0.7925}, {"text": "V", "box": [0.5960498053429991, 0.6300743281875357, 0.006655255739025373, 0.009167143129407281], "conf": 0.7925}, {"text": "M", "box": [0.6027050610820245, 0.6300743281875357, 0.006655255739025373, 0.009167143129407281], "conf": 0.7925}, {"text": "I", "box": [0.6093603168210499, 0.6300743281875357, 0.006655255739025373, 0.009167143129407281], "conf": 0.7925}, {"text": "H", "box": [0.6160155725600751, 0.6300743281875357, 0.006655255739025373, 0.009167143129407281], "conf": 0.7925}, {"text": "O", "box": [0.6226708282991005, 0.6300743281875357, 0.006655255739025373, 0.009167143129407281], "conf": 0.7925}, {"text": "V", "box": [0.6359813397771513, 0.6300743281875357, 0.006655255739025373, 0.009167143129407281], "conf": 0.7925}, {"text": "\u042f", "box": [0.6426365955161767, 0.6300743281875357, 0.006655255739025373, 0.009167143129407281], "conf": 0.7925}, {"text": "S", "box": [0.6492918512552021, 0.6300743281875357, 0.006655255739025373, 0.009167143129407281], "conf": 0.7925}, {"text": "V", "box": [0.6559471069942273, 0.6300743281875357, 0.006655255739025373, 0.009167143129407281], "conf": 0.7925}, {"text": "S", "box": [0.6626023627332528, 0.6300743281875357, 0.006655255739025373, 0.009167143129407281], "conf": 0.7925}, {"text": "\u0989", "box": [0.6795677272117063, 0.6300743281875357, 0.004524097194254262, 0.009167143129407281], "conf": 0.7925}, {"text": "\u90e8", "box": [0.6011008189018661, 0.673394320564132, 0.008554839575781984, 0.01090146750524109], "conf": 0.504}, {"text": "\u5dde", "box": [0.609655658477648, 0.673394320564132, 0.008554839575781984, 0.01090146750524109], "conf": 0.504}, {"text": "\u6b64", "box": [0.61821049805343, 0.673394320564132, 0.008554839575781984, 0.01090146750524109], "conf": 0.504}, {"text": "\u8a08", "box": [0.6267653376292119, 0.673394320564132, 0.008554839575781984, 0.01090146750524109], "conf": 0.504}, {"text": "\u5916", "box": [0.635320177204994, 0.673394320564132, 0.008554839575781984, 0.01090146750524109], "conf": 0.504}, {"text": "|", "box": [0.643875016780776, 0.673394320564132, 0.008554839575781984, 0.01090146750524109], "conf": 0.504}, {"text": "\u4e00", "box": [0.6524298563565579, 0.673394320564132, 0.008554839575781984, 0.01090146750524109], "conf": 0.504}, {"text": "\u7f69", "box": [0.6609846959323399, 0.673394320564132, 0.008554839575781984, 0.01090146750524109], "conf": 0.504}, {"text": "\u2022", "box": [0.628084306618338, 0.7131503716409376, 0.008470935696066587, 0.011644749380598438], "conf": 0.5726}, {"text": "\u51fd", "box": [0.6078802523828702, 0.8506194015627978, 0.006873405826285408, 0.013950829045168669], "conf": 0.5449}, {"text": "\u9080", "box": [0.6268760907504364, 0.8506194015627978, 0.006873405826285408, 0.013950829045168669], "conf": 0.5449}, {"text": "\u96f6", "box": [0.6441401530406766, 0.8506194015627978, 0.0068868304470398704, 0.013950829045168669], "conf": 0.5449}, {"text": "\u8def", "box": [0.6614176399516714, 0.8506194015627978, 0.006873405826285408, 0.013950829045168669], "conf": 0.5449}, {"text": "1", "box": [0.6013827359377097, 0.9028587764436822, 0.006260303396429051, 0.008290451686678102], "conf": 0.6505}, {"text": "()", "box": [0.6622902403007115, 0.9360968172288927, 0.008189018660222848, 0.010310653706880122], "conf": 0.6924}, {"text": "\u2022", "box": [0.6975164451604242, 0.5221650466933486, 0.004811115585984696, 0.008709738898418144], "conf": 0.5124}, {"text": "\u203b", "box": [0.7071386763323936, 0.5221650466933486, 0.004811115585984696, 0.008709738898418144], "conf": 0.5124}, {"text": "\u538b", "box": [0.716760907504363, 0.5221650466933486, 0.004811115585984696, 0.008709738898418144], "conf": 0.5124}, {"text": "\u968a", "box": [0.7263832729225399, 0.5221650466933486, 0.004811115585984696, 0.008709738898418144], "conf": 0.5124}, {"text": "\u54aa", "box": [0.7360055040945094, 0.5221650466933486, 0.004811115585984696, 0.008709738898418144], "conf": 0.5124}, {"text": "\u672c", "box": [0.7456277352664786, 0.5221650466933486, 0.004811115585984696, 0.008709738898418144], "conf": 0.5124}, {"text": "\u54a8", "box": [0.7552499664384481, 0.5221650466933486, 0.004811115585984696, 0.008709738898418144], "conf": 0.5124}, {"text": "\u6e1b", "box": [0.7648721976104176, 0.5221650466933486, 0.004811115585984696, 0.008709738898418144], "conf": 0.5124}, {"text": "\u54e5", "box": [0.7744945630285944, 0.5221650466933486, 0.004811115585984696, 0.008709738898418144], "conf": 0.5124}, {"text": "\u5e36", "box": [0.7841167942005639, 0.5221650466933486, 0.004811115585984696, 0.008709738898418144], "conf": 0.5124}, {"text": "\u3002", "box": [0.7937390253725332, 0.5221650466933486, 0.004811115585984696, 0.008709738898418144], "conf": 0.5124}, {"text": "f-SN*", "box": [0.7708014498590414, 0.5997331808652564, 0.02659417371459256, 0.007337526205450734], "conf": 0.5099}, {"text": "\u2022", "box": [0.776869378440059, 0.6335620354488279, 0.0048664250234930866, 0.006803887935963408], "conf": 0.5222}, {"text": "\u739b", "box": [0.6906296147133844, 0.6777015437392796, 0.005039871123640757, 0.007489994282447112], "conf": 0.5673}, {"text": "\u723e", "box": [0.6956694858370251, 0.6777015437392796, 0.005039871123640757, 0.007489994282447112], "conf": 0.5673}, {"text": "|", "box": [0.7007093569606658, 0.6777015437392796, 0.005039871123640757, 0.007489994282447112], "conf": 0.5673}, {"text": "\u5c71", "box": [0.7057492280843066, 0.6777015437392796, 0.005039871123640757, 0.007489994282447112], "conf": 0.5673}, {"text": "D", "box": [0.7107890992079473, 0.6777015437392796, 0.005039871123640757, 0.007489994282447112], "conf": 0.5673}, {"text": "\u642c", "box": [0.7158291045777957, 0.6777015437392796, 0.005039871123640757, 0.007489994282447112], "conf": 0.5673}, {"text": "\u8d60", "box": [0.7208689757014364, 0.6777015437392796, 0.005039871123640757, 0.007489994282447112], "conf": 0.5673}, {"text": "\u8a00", "box": [0.7259088468250772, 0.6777015437392796, 0.005039871123640757, 0.007489994282447112], "conf": 0.5673}, {"text": "\u3002", "box": [0.730948717948718, 0.6777015437392796, 0.005039871123640757, 0.007489994282447112], "conf": 0.5673}, {"text": "\u8cde", "box": [0.7359885890723586, 0.6777015437392796, 0.005039871123640757, 0.007489994282447112], "conf": 0.5673}, {"text": "\u8be2", "box": [0.7410284601959995, 0.6777015437392796, 0.005039871123640757, 0.007489994282447112], "conf": 0.5673}, {"text": "\u535a", "box": [0.7460683313196402, 0.6777015437392796, 0.005039871123640757, 0.007489994282447112], "conf": 0.5673}, {"text": "\u6c5f", "box": [0.751108202443281, 0.6777015437392796, 0.005039871123640757, 0.007489994282447112], "conf": 0.5673}, {"text": "\u8fa6", "box": [0.7561480735669217, 0.6777015437392796, 0.005039871123640757, 0.007489994282447112], "conf": 0.5673}, {"text": "\u3002", "box": [0.7611879446905625, 0.6777015437392796, 0.005039871123640757, 0.007489994282447112], "conf": 0.5673}, {"text": "\u570b", "box": [0.7662279500604108, 0.6777015437392796, 0.005039871123640757, 0.007489994282447112], "conf": 0.5673}, {"text": "N", "box": [0.7712678211840516, 0.6777015437392796, 0.005039871123640757, 0.007489994282447112], "conf": 0.5673}, {"text": "\u5f25", "box": [0.7763076923076924, 0.6777015437392796, 0.005039871123640757, 0.007489994282447112], "conf": 0.5673}, {"text": "\u5fae", "box": [0.781347563431333, 0.6777015437392796, 0.005039871123640757, 0.007489994282447112], "conf": 0.5673}, {"text": "\u903e", "box": [0.690562491609612, 0.7106727653897466, 0.005043764263659552, 0.008137983609681723], "conf": 0.5261}, {"text": "\u672c", "box": [0.6956062558732715, 0.7106727653897466, 0.005043764263659552, 0.008137983609681723], "conf": 0.5261}, {"text": "\u9ad8", "box": [0.7006501543831387, 0.7106727653897466, 0.005043764263659552, 0.008137983609681723], "conf": 0.5261}, {"text": "\u795e", "box": [0.7056939186467982, 0.7106727653897466, 0.005043764263659552, 0.008137983609681723], "conf": 0.5261}, {"text": "\u5e94", "box": [0.7107378171566653, 0.7106727653897466, 0.005043764263659552, 0.008137983609681723], "conf": 0.5261}, {"text": "\u3002", "box": [0.7157815814203249, 0.7106727653897466, 0.005043764263659552, 0.008137983609681723], "conf": 0.5261}, {"text": "\u203b", "box": [0.720825479930192, 0.7106727653897466, 0.005043764263659552, 0.008137983609681723], "conf": 0.5261}, {"text": "\u5fae", "box": [0.7258692441938516, 0.7106727653897466, 0.005043764263659552, 0.008137983609681723], "conf": 0.5261}, {"text": "\u570b", "box": [0.7309130084575111, 0.7106727653897466, 0.005043764263659552, 0.008137983609681723], "conf": 0.5261}, {"text": "\u51b2", "box": [0.7359569069673781, 0.7106727653897466, 0.005043764263659552, 0.008137983609681723], "conf": 0.5261}, {"text": "\u96f6", "box": [0.7410006712310377, 0.7106727653897466, 0.005043764263659552, 0.008137983609681723], "conf": 0.5261}, {"text": "\u624d", "box": [0.7460445697409048, 0.7106727653897466, 0.005043764263659552, 0.008137983609681723], "conf": 0.5261}, {"text": "\u25c6", "box": [0.7510883340045643, 0.7106727653897466, 0.005043764263659552, 0.008137983609681723], "conf": 0.5261}, {"text": "\u5f92", "box": [0.7561322325144315, 0.7106727653897466, 0.005043764263659552, 0.008137983609681723], "conf": 0.5261}, {"text": "\u4e3e", "box": [0.761175996778091, 0.7106727653897466, 0.005043764263659552, 0.008137983609681723], "conf": 0.5261}, {"text": "\u964d", "box": [0.7662197610417506, 0.7106727653897466, 0.005043764263659552, 0.008137983609681723], "conf": 0.5261}, {"text": "\u3002", "box": [0.7712636595516177, 0.7106727653897466, 0.005043764263659552, 0.008137983609681723], "conf": 0.5261}, {"text": "\uff1e", "box": [0.7763074238152772, 0.7106727653897466, 0.005043764263659552, 0.008137983609681723], "conf": 0.5261}, {"text": "\u53f6", "box": [0.7813513223251444, 0.7106727653897466, 0.005043764263659552, 0.008137983609681723], "conf": 0.5261}, {"text": "\u903e", "box": [0.7863950865888039, 0.7106727653897466, 0.005043764263659552, 0.008137983609681723], "conf": 0.5261}, {"text": "\u795e", "box": [0.7914389850986709, 0.7106727653897466, 0.005043764263659552, 0.008137983609681723], "conf": 0.5261}, {"text": "\u2022", "box": [0.6925761847227816, 0.7438917476653325, 0.004947241240434957, 0.008099866590432629], "conf": 0.528}, {"text": "\u77e5", "box": [0.7024708014498591, 0.7438917476653325, 0.004947241240434957, 0.008099866590432629], "conf": 0.528}, {"text": "\u5146", "box": [0.7123654181769364, 0.7438917476653325, 0.004947241240434957, 0.008099866590432629], "conf": 0.528}, {"text": "\u535a", "box": [0.7222599006578063, 0.7438917476653325, 0.004947241240434957, 0.008099866590432629], "conf": 0.528}, {"text": "\u55bb", "box": [0.7321545173848839, 0.7438917476653325, 0.004947241240434957, 0.008099866590432629], "conf": 0.528}, {"text": "\u9664", "box": [0.7420491341119614, 0.7438917476653325, 0.004947241240434957, 0.008099866590432629], "conf": 0.528}, {"text": "\u706b", "box": [0.7519437508390389, 0.7438917476653325, 0.004947241240434957, 0.008099866590432629], "conf": 0.528}, {"text": "\u5c07", "box": [0.7618382333199087, 0.7438917476653325, 0.004947241240434957, 0.008099866590432629], "conf": 0.528}, {"text": "\u5c0f", "box": [0.7717328500469861, 0.7438917476653325, 0.004947241240434957, 0.008099866590432629], "conf": 0.528}, {"text": "\uff1e", "box": [0.7816274667740636, 0.7438917476653325, 0.004947241240434957, 0.008099866590432629], "conf": 0.528}, {"text": "\u7bc0", "box": [0.7915220835011411, 0.7438917476653325, 0.004947241240434957, 0.008099866590432629], "conf": 0.528}, {"text": ">", "box": [0.8821184051550544, 0.011568515342100249, 0.0050655121492817826, 0.006346483704974271], "conf": 0.5449}, {"text": "\u9748", "box": [0.8871839173043361, 0.011568515342100249, 0.0050655121492817826, 0.006346483704974271], "conf": 0.5449}, {"text": "\u5561", "box": [0.8922495636998256, 0.011568515342100249, 0.0050655121492817826, 0.006346483704974271], "conf": 0.5449}, {"text": "\u8ad6", "box": [0.8973150758491073, 0.011568515342100249, 0.0050655121492817826, 0.006346483704974271], "conf": 0.5449}, {"text": "\u516d", "box": [0.902380587998389, 0.011568515342100249, 0.0050655121492817826, 0.006346483704974271], "conf": 0.5449}, {"text": "\u3002", "box": [0.9074462343938784, 0.011568515342100249, 0.0050655121492817826, 0.006346483704974271], "conf": 0.5449}, {"text": "O", "box": [0.9269297892334541, 0.1876119687440442, 0.006873405826285408, 0.008652563369544501], "conf": 0.6687}, {"text": "\u2022", "box": [0.9250637669485837, 0.42605298265675623, 0.004604644918781044, 0.007585286830569849], "conf": 0.5846}, {"text": "\u96d6", "box": [0.8098536716337764, 0.44564513055079097, 0.005039871123640757, 0.0075090527920716596], "conf": 0.5239}, {"text": "\u4e09", "box": [0.8148935427574171, 0.44564513055079097, 0.005039871123640757, 0.0075090527920716596], "conf": 0.5239}, {"text": "\u6458", "box": [0.8199334138810579, 0.44564513055079097, 0.005039871123640757, 0.0075090527920716596], "conf": 0.5239}, {"text": "\u95dc", "box": [0.8249732850046986, 0.44564513055079097, 0.005039871123640757, 0.0075090527920716596], "conf": 0.5239}, {"text": "|", "box": [0.8300131561283394, 0.44564513055079097, 0.005039871123640757, 0.0075090527920716596], "conf": 0.5239}, {"text": "\u8b70", "box": [0.8350531614981876, 0.44564513055079097, 0.005039871123640757, 0.0075090527920716596], "conf": 0.5239}, {"text": "\u3002", "box": [0.8400930326218284, 0.44564513055079097, 0.005039871123640757, 0.0075090527920716596], "conf": 0.5239}, {"text": "\u751a", "box": [0.8451329037454692, 0.44564513055079097, 0.005039871123640757, 0.0075090527920716596], "conf": 0.5239}, {"text": "\u5561", "box": [0.8501727748691099, 0.44564513055079097, 0.005039871123640757, 0.0075090527920716596], "conf": 0.5239}, {"text": "\u806f", "box": [0.8552126459927507, 0.44564513055079097, 0.005039871123640757, 0.0075090527920716596], "conf": 0.5239}, {"text": "\u570b", "box": [0.8602525171163914, 0.44564513055079097, 0.005039871123640757, 0.0075090527920716596], "conf": 0.5239}, {"text": "\u5c71", "box": [0.8652923882400322, 0.44564513055079097, 0.005039871123640757, 0.0075090527920716596], "conf": 0.5239}, {"text": "D", "box": [0.8703322593636729, 0.44564513055079097, 0.005039871123640757, 0.0075090527920716596], "conf": 0.5239}, {"text": "\u3002", "box": [0.8753721304873138, 0.44564513055079097, 0.005039871123640757, 0.0075090527920716596], "conf": 0.5239}, {"text": "6", "box": [0.8804120016109546, 0.44564513055079097, 0.005039871123640757, 0.0075090527920716596], "conf": 0.5239}, {"text": "\u773e", "box": [0.8854520069808028, 0.44564513055079097, 0.005039871123640757, 0.0075090527920716596], "conf": 0.5239}, {"text": "\u70ba", "box": [0.8904918781044436, 0.44564513055079097, 0.005039871123640757, 0.0075090527920716596], "conf": 0.5239}, {"text": "\u4e2d", "box": [0.8955317492280843, 0.44564513055079097, 0.005039871123640757, 0.0075090527920716596], "conf": 0.5239}, {"text": "\u5d17", "box": [0.9005716203517251, 0.44564513055079097, 0.005039871123640757, 0.0075090527920716596], "conf": 0.5239}, {"text": "\u4e00", "box": [0.8198550140958518, 0.45675624166190204, 0.005042019062961471, 0.007718696397941681], "conf": 0.5192}, {"text": "\u9f61", "box": [0.8248970331588134, 0.45675624166190204, 0.005042019062961471, 0.007718696397941681], "conf": 0.5192}, {"text": "\u6d77", "box": [0.8299390522217748, 0.45675624166190204, 0.005042019062961471, 0.007718696397941681], "conf": 0.5192}, {"text": "|", "box": [0.8349810712847362, 0.45675624166190204, 0.005042019062961471, 0.007718696397941681], "conf": 0.5192}, {"text": "|", "box": [0.8400230903476977, 0.45675624166190204, 0.005042019062961471, 0.007718696397941681], "conf": 0.5192}, {"text": "\u3002", "box": [0.8450649751644517, 0.45675624166190204, 0.005042019062961471, 0.007718696397941681], "conf": 0.5192}, {"text": "\u90a3", "box": [0.8501069942274131, 0.45675624166190204, 0.005042019062961471, 0.007718696397941681], "conf": 0.5192}, {"text": "\u533a", "box": [0.8551490132903745, 0.45675624166190204, 0.005042019062961471, 0.007718696397941681], "conf": 0.5192}, {"text": "\u8fa6", "box": [0.860191032353336, 0.45675624166190204, 0.005042019062961471, 0.007718696397941681], "conf": 0.5192}, {"text": "\u9673", "box": [0.8652330514162975, 0.45675624166190204, 0.005042019062961471, 0.007718696397941681], "conf": 0.5192}, {"text": "\u51c6", "box": [0.870275070479259, 0.45675624166190204, 0.005042019062961471, 0.007718696397941681], "conf": 0.5192}, {"text": "\u5165", "box": [0.8753170895422204, 0.45675624166190204, 0.005042019062961471, 0.007718696397941681], "conf": 0.5192}, {"text": "\u3002", "box": [0.880359108605182, 0.45675624166190204, 0.005042019062961471, 0.007718696397941681], "conf": 0.5192}, {"text": "\u6bd2", "box": [0.8854011276681434, 0.45675624166190204, 0.005042019062961471, 0.007718696397941681], "conf": 0.5192}, {"text": "\u7ba1", "box": [0.8904431467311048, 0.45675624166190204, 0.005042019062961471, 0.007718696397941681], "conf": 0.5192}, {"text": "\u57fa", "box": [0.8954850315478587, 0.45675624166190204, 0.005042019062961471, 0.007718696397941681], "conf": 0.5192}, {"text": "\u8b49", "box": [0.9005270506108202, 0.45675624166190204, 0.005042019062961471, 0.007718696397941681], "conf": 0.5192}, {"text": "\u7406", "box": [0.9055690696737817, 0.45675624166190204, 0.005042019062961471, 0.007718696397941681], "conf": 0.5192}, {"text": "\u8a08", "box": [0.9106110887367431, 0.45675624166190204, 0.005042019062961471, 0.007718696397941681], "conf": 0.5192}, {"text": "\u81fa", "box": [0.8097999731507585, 0.5007623403849819, 0.005042556047791649, 0.008042691061558986], "conf": 0.5152}, {"text": "\u9ede", "box": [0.81484252919855, 0.5007623403849819, 0.005042556047791649, 0.008042691061558986], "conf": 0.5152}, {"text": "\u524d", "box": [0.8198850852463417, 0.5007623403849819, 0.005042556047791649, 0.008042691061558986], "conf": 0.5152}, {"text": "\u90e8", "box": [0.8249276412941335, 0.5007623403849819, 0.005042556047791649, 0.008042691061558986], "conf": 0.5152}, {"text": "\u8986", "box": [0.8299701973419251, 0.5007623403849819, 0.005042556047791649, 0.008042691061558986], "conf": 0.5152}, {"text": "\u5291", "box": [0.8350127533897168, 0.5007623403849819, 0.005042556047791649, 0.008042691061558986], "conf": 0.5152}, {"text": "\u570b", "box": [0.8400551751913008, 0.5007623403849819, 0.005042556047791649, 0.008042691061558986], "conf": 0.5152}, {"text": "\u54aa", "box": [0.8450977312390925, 0.5007623403849819, 0.005042556047791649, 0.008042691061558986], "conf": 0.5152}, {"text": "\u98ef", "box": [0.8501402872868841, 0.5007623403849819, 0.005042556047791649, 0.008042691061558986], "conf": 0.5152}, {"text": "\u3002", "box": [0.8551828433346758, 0.5007623403849819, 0.005042556047791649, 0.008042691061558986], "conf": 0.5152}, {"text": "\u56db", "box": [0.8602253993824674, 0.5007623403849819, 0.005042556047791649, 0.008042691061558986], "conf": 0.5152}, {"text": "\u203b", "box": [0.8652679554302591, 0.5007623403849819, 0.005042556047791649, 0.008042691061558986], "conf": 0.5152}, {"text": "\u4e66", "box": [0.8703105114780507, 0.5007623403849819, 0.005042556047791649, 0.008042691061558986], "conf": 0.5152}, {"text": "\u8a08", "box": [0.8753530675258424, 0.5007623403849819, 0.005042556047791649, 0.008042691061558986], "conf": 0.5152}, {"text": "\u5341", "box": [0.8803956235736341, 0.5007623403849819, 0.005042556047791649, 0.008042691061558986], "conf": 0.5152}, {"text": "\u65ad", "box": [0.8854381796214257, 0.5007623403849819, 0.005042556047791649, 0.008042691061558986], "conf": 0.5152}, {"text": "\u52a0", "box": [0.8904806014230098, 0.5007623403849819, 0.005042556047791649, 0.008042691061558986], "conf": 0.5152}, {"text": "\u3002", "box": [0.8955231574708015, 0.5007623403849819, 0.005042556047791649, 0.008042691061558986], "conf": 0.5152}, {"text": "\u203b", "box": [0.9005657135185932, 0.5007623403849819, 0.005042556047791649, 0.008042691061558986], "conf": 0.5152}, {"text": "\u6c5f", "box": [0.9056082695663847, 0.5007623403849819, 0.005042556047791649, 0.008042691061558986], "conf": 0.5152}, {"text": "\u9593", "box": [0.9106508256141764, 0.5007623403849819, 0.005042556047791649, 0.008042691061558986], "conf": 0.5152}, {"text": "(a)", "box": [0.9251845885353739, 0.6834000381170193, 0.005356423681031011, 0.006346483704974271], "conf": 0.5141}, {"text": "a", "box": [0.9260169150221506, 0.6931008195159138, 0.005692039199892603, 0.007985515532685344], "conf": 0.5956}, {"text": "\u566a", "box": [0.8089407974224728, 0.7242805412616734, 0.005280574573768291, 0.006727653897465218], "conf": 0.5596}, {"text": "\u54aa", "box": [0.8142213719962411, 0.7242805412616734, 0.005280574573768291, 0.006727653897465218], "conf": 0.5596}, {"text": "\u66f8", "box": [0.8195019465700094, 0.7242805412616734, 0.005280574573768291, 0.006727653897465218], "conf": 0.5596}, {"text": "\u4e66", "box": [0.8247825211437777, 0.7242805412616734, 0.005280574573768291, 0.006727653897465218], "conf": 0.5596}, {"text": "\u3002", "box": [0.830063095717546, 0.7242805412616734, 0.005280574573768291, 0.006727653897465218], "conf": 0.5596}, {"text": "\u6e38", "box": [0.8353436702913143, 0.7242805412616734, 0.005280574573768291, 0.006727653897465218], "conf": 0.5596}, {"text": "\u5ae9", "box": [0.8406242448650826, 0.7242805412616734, 0.005280574573768291, 0.006727653897465218], "conf": 0.5596}, {"text": "\u5c1a", "box": [0.8459048194388509, 0.7242805412616734, 0.005280574573768291, 0.006727653897465218], "conf": 0.5596}, {"text": "\u58fd", "box": [0.8511853940126191, 0.7242805412616734, 0.005280574573768291, 0.006727653897465218], "conf": 0.5596}, {"text": "\u5d17", "box": [0.8564659685863873, 0.7242805412616734, 0.005280574573768291, 0.006727653897465218], "conf": 0.5596}, {"text": "\u6240", "box": [0.8617465431601556, 0.7242805412616734, 0.005280574573768291, 0.006727653897465218], "conf": 0.5596}, {"text": "\u9732", "box": [0.8670271177339239, 0.7242805412616734, 0.005280574573768291, 0.006727653897465218], "conf": 0.5596}, {"text": "\u3002", "box": [0.8723076923076922, 0.7242805412616734, 0.005280574573768291, 0.006727653897465218], "conf": 0.5596}, {"text": "\u7247", "box": [0.8775882668814605, 0.7242805412616734, 0.005280574573768291, 0.006727653897465218], "conf": 0.5596}, {"text": "\u6d77", "box": [0.8828688414552288, 0.7242805412616734, 0.005280574573768291, 0.006727653897465218], "conf": 0.5596}, {"text": "\u56de", "box": [0.8881494160289971, 0.7242805412616734, 0.005280574573768291, 0.006727653897465218], "conf": 0.5596}, {"text": "\u58fd", "box": [0.8934299906027654, 0.7242805412616734, 0.005280574573768291, 0.006727653897465218], "conf": 0.5596}, {"text": "\u5c71", "box": [0.8987105651765337, 0.7242805412616734, 0.005280574573768291, 0.006727653897465218], "conf": 0.5596}, {"text": "\u56db", "box": [0.9039911397503021, 0.7242805412616734, 0.005280574573768291, 0.006727653897465218], "conf": 0.5596}, {"text": "\u3002", "box": [0.9092717143240704, 0.7242805412616734, 0.005280574573768291, 0.006727653897465218], "conf": 0.5596}, {"text": "(b)", "box": [0.8572023090347698, 0.9412044978082714, 0.004067660088602497, 0.005012388031255956], "conf": 0.7904}, {"text": "E", "box": [0.06868035977983622, 0.18566800076234038, 0.004859712713115855, 0.013531541833428626], "conf": 0.5252}, {"text": "\u2022", "box": [0.12307692307692307, 0.7583190394511149, 0.0067190226876090746, 0.010672765389746522], "conf": 0.5185}, {"text": "\u90e8", "box": [0.12979594576453216, 0.7583190394511149, 0.0067190226876090746, 0.010672765389746522], "conf": 0.5185}, {"text": "\u7aef", "box": [0.13651496845214123, 0.7583190394511149, 0.0067190226876090746, 0.010672765389746522], "conf": 0.5185}, {"text": "\u964d", "box": [0.1432339911397503, 0.7583190394511149, 0.0067190226876090746, 0.010672765389746522], "conf": 0.5185}, {"text": "\u8b49", "box": [0.14995301382735937, 0.7583190394511149, 0.0067190226876090746, 0.010672765389746522], "conf": 0.5185}, {"text": "\u5ba4", "box": [0.15667203651496844, 0.7583190394511149, 0.0067190226876090746, 0.010672765389746522], "conf": 0.5185}, {"text": "-", "box": [0.12710229561014902, 0.7706689536878216, 0.007279232111692844, 0.011720983419096626], "conf": 0.731}, {"text": "8TT", "box": [0.13438152772184186, 0.7706689536878216, 0.021837696335078535, 0.011720983419096626], "conf": 0.731}, {"text": "9", "box": [0.15621922405692037, 0.7706689536878216, 0.007279232111692844, 0.011720983419096626], "conf": 0.731}, {"text": "\u9762", "box": [0.06900255067794335, 0.35176291214027067, 0.009736877433212512, 0.019954259576901088], "conf": 0.5639}, {"text": "\u65b0", "box": [0.07873942811115586, 0.35176291214027067, 0.009736877433212512, 0.019954259576901088], "conf": 0.5639}, {"text": "t49161", "box": [0.08847630554436836, 0.35176291214027067, 0.058421264599275075, 0.019954259576901088], "conf": 0.5639}, {"text": "\u9069", "box": [0.14689757014364344, 0.35176291214027067, 0.009736877433212512, 0.019954259576901088], "conf": 0.5639}, {"text": "\u65b0", "box": [0.15663444757685596, 0.35176291214027067, 0.009736877433212512, 0.019954259576901088], "conf": 0.5639}, {"text": "|>-", "box": [0.07383541414955028, 0.8280541261673338, 0.07669485837025103, 0.012178387650085764], "conf": 0.7004}, {"text": "9", "box": [0.07418445428916634, 0.046274061368400995, 0.00622902403007115, 0.008862206975414523], "conf": 0.9698}, {"text": "0", "box": [0.08664250234930863, 0.046274061368400995, 0.00622902403007115, 0.008862206975414523], "conf": 0.9698}, {"text": "8", "box": [0.09287152637937977, 0.046274061368400995, 0.00622902403007115, 0.008862206975414523], "conf": 0.9698}, {"text": "\u201c", "box": [0.12331856625050343, 0.2640937678673528, 0.006450530272519801, 0.008309510196302649], "conf": 0.7229}, {"text": "N", "box": [0.1297690965230232, 0.2640937678673528, 0.006450530272519801, 0.008309510196302649], "conf": 0.7229}, {"text": "V", "box": [0.13621962679554303, 0.2640937678673528, 0.006450530272519801, 0.008309510196302649], "conf": 0.7229}, {"text": "A", "box": [0.14267015706806283, 0.2640937678673528, 0.006450530272519801, 0.008309510196302649], "conf": 0.7229}, {"text": "ORL&", "box": [0.13254128070881996, 0.27571945873832665, 0.028701839173043364, 0.009281494187154566], "conf": 0.7248}, {"text": "-", "box": [0.10283702510404082, 0.6577282256527539, 0.0066764666398174246, 0.009453020773775491], "conf": 0.8008}, {"text": "266", "box": [0.10951362599006578, 0.6577282256527539, 0.020029534165659817, 0.009453020773775491], "conf": 0.8008}, {"text": "-", "box": [0.1295431601557256, 0.6577282256527539, 0.0066764666398174246, 0.009453020773775491], "conf": 0.8008}, {"text": "81T", "box": [0.13621962679554303, 0.6577282256527539, 0.020029534165659817, 0.009453020773775491], "conf": 0.8008}, {"text": "O", "box": [0.08203785743052759, 0.8994854202401373, 0.006547321788159485, 0.011168286639984754], "conf": 0.5937}, {"text": "|", "box": [0.08858517921868707, 0.8994854202401373, 0.006547321788159485, 0.011168286639984754], "conf": 0.5937}, {"text": "\u25cb", "box": [0.0951326352530541, 0.8994854202401373, 0.006547321788159485, 0.011168286639984754], "conf": 0.5937}, {"text": "\uff1e", "box": [0.10167995704121359, 0.8994854202401373, 0.006547321788159485, 0.011168286639984754], "conf": 0.5937}, {"text": "\u4e00", "box": [0.10822741307558062, 0.8994854202401373, 0.006547321788159485, 0.011168286639984754], "conf": 0.5937}, {"text": "|", "box": [0.12132219089810714, 0.8994854202401373, 0.006547321788159485, 0.011168286639984754], "conf": 0.5937}, {"text": "\u771f", "box": [0.15157739293864947, 0.8994854202401373, 0.005504094509330111, 0.011168286639984754], "conf": 0.5937}];
+  const bOnlyData = [{"text": "#", "box": [0.3033964290508793, 0.014484467314655993, 0.0557121761310243, 0.014103297122165046], "conf": 0.22193540632724762}, {"text": "CNONAAOSSE", "box": [0.49228084306618336, 0.016580903373356205, 0.08242717143240703, 0.011816275967219363], "conf": 0.15964621305465698}, {"text": "\u771f\u56db\u7b2c", "box": [0.924956369982548, 0.022298456260720412, 0.008054772452678213, 0.03068420049552125], "conf": 0.7536122798919678}, {"text": "AAAN", "box": [0.06564639548932742, 0.03163712597674862, 0.09665726943213854, 0.013912712025919573], "conf": 0.2082154005765915}, {"text": "\u00b7", "box": [0.5874614042153309, 0.03449590242043072, 0.09585179218687072, 0.013150371640937679], "conf": 0.40413790941238403}, {"text": "DNOM", "box": [0.29050879312659417, 0.040022870211549454, 0.030017452006980805, 0.013340956737183152], "conf": 0.39742743968963623}, {"text": "SITIHG", "box": [0.32052624513357497, 0.040022870211549454, 0.0450261780104712, 0.013340956737183152], "conf": 0.39742743968963623}, {"text": "HOO  ", "box": [0.3772318432004296, 0.041928721174004195, 0.097596992884951, 0.013912712025919573], "conf": 0.31156811118125916}, {"text": "\u8f66", "box": [0.7098939454960398, 0.042119306270249665, 0.06739159618740771, 0.02115494568324757], "conf": 0.1630198061466217}, {"text": "\u4e00\u671f\u661f", "box": [0.926030339642905, 0.05889079473985134, 0.00724929520741039, 0.03125595578425767], "conf": 0.9761931300163269}, {"text": "NAR", "box": [0.5952476842529199, 0.07661520869068039, 0.024567055980668547, 0.014675052410901468], "conf": 0.24444928765296936}, {"text": "NAAS", "box": [0.6198147402335884, 0.07661520869068039, 0.03275607464089139, 0.014675052410901468], "conf": 0.24444928765296936}, {"text": "SSEE", "box": [0.6525708148744798, 0.07661520869068039, 0.03275607464089139, 0.014675052410901468], "conf": 0.24444928765296936}, {"text": ";", "box": [0.8307155322862129, 0.09757956927768248, 0.0034904013961605585, 0.005717552887364208], "conf": 0.2290830761194229}, {"text": "\u8f66", "box": [0.7039871123640757, 0.108252334667429, 0.07410390656463955, 0.021536115875738518], "conf": 0.22921402752399445}, {"text": "\u00b7", "box": [0.5964559001208216, 0.11320754716981132, 0.08806551214928178, 0.013340956737183152], "conf": 0.246901735663414}, {"text": "\uff1a", "box": [0.09370385286615653, 0.12064036592338478, 0.07128473620620218, 0.02172670097198399], "conf": 0.23509109020233154}, {"text": "\u00b7NMONMOAN", "box": [0.2757417102966841, 0.1501810558414332, 0.0965230232245939, 0.013150371640937679], "conf": 0.31085920333862305}, {"text": "A.E", "box": [0.5984695932339912, 0.1667619592147894, 0.021418372203712517, 0.012578616352201259], "conf": 0.17608267068862915}, {"text": ".EOLEAEA", "box": [0.6198879654377037, 0.1667619592147894, 0.05711565920990005, 0.012578616352201259], "conf": 0.17608267068862915}, {"text": "\u00b7", "box": [0.18069539535508122, 0.17495711835334476, 0.07383541414955028, 0.012959786544692205], "conf": 0.38899320363998413}, {"text": "\uff1a\u00b7", "box": [0.22701033695798092, 0.18753573470554602, 0.04121358571620352, 0.013150371640937679], "conf": 0.3252977132797241}, {"text": "VNM", "box": [0.27587595650422875, 0.18562988374309128, 0.09719425426231709, 0.015056222603392415], "conf": 0.16432617604732513}, {"text": "A", "box": [0.2829910055040945, 0.19878025538402896, 0.08927372801718352, 0.013340956737183152], "conf": 0.23159384727478027}, {"text": "\u9152", "box": [0.8939454960397368, 0.20030493615399275, 0.019868438716606256, 0.009910425004764627], "conf": 0.21629434823989868}, {"text": "AEASSNNAASSEN", "box": [0.38045375218150085, 0.20163903182771106, 0.09464357631896898, 0.013340956737183152], "conf": 0.20582738518714905}, {"text": "\u5e97", "box": [0.08913948180963888, 0.216504669334858, 0.05087931265941737, 0.02267962645321136], "conf": 0.11220786720514297}, {"text": "\u4e2d", "box": [0.5317492280843066, 0.22107871164474938, 0.048999865753792456, 0.013340956737183152], "conf": 0.07072087377309799}, {"text": "\u00b7", "box": [0.5065109410659149, 0.23365732799695063, 0.07396966035709492, 0.013150371640937679], "conf": 0.26715490221977234}, {"text": "\u3002\u5b9c\u7d20", "box": [0.899449590549067, 0.24509243377167905, 0.015304067660088603, 0.009148084619782733], "conf": 0.4103023111820221}, {"text": "H", "box": [0.1577392938649483, 0.26453211358871737, 0.006041079339508659, 0.007813988946064417], "conf": 0.4329633116722107}, {"text": "\u4e16", "box": [0.9245536313599141, 0.27692014484467314, 0.013961605584642234, 0.009338669716028206], "conf": 0.11275101453065872}, {"text": "\u00b7", "box": [0.6176668009128742, 0.3045549838002668, 0.06766008860249698, 0.014103297122165046], "conf": 0.21769608557224274}, {"text": "\u00b7", "box": [0.6927104309303262, 0.3117972174575948, 0.09585179218687072, 0.009910425004764627], "conf": 0.202394038438797}, {"text": "\u4e2d", "box": [0.48489730165122835, 0.32094530207737754, 0.09665726943213854, 0.02210787116447494], "conf": 0.09421927481889725}, {"text": "\u00b7", "box": [0.8304470398711237, 0.32246998284734135, 0.07410390656463955, 0.00952925481227368], "conf": 0.23196372389793396}, {"text": "\u00b7", "box": [0.6915022150624245, 0.33371450352582427, 0.10672573499798631, 0.010482180293501049], "conf": 0.2673890292644501}, {"text": "\u00b7\u00b7", "box": [0.8107128473620621, 0.35506003430531735, 0.09424083769633508, 0.010672765389746522], "conf": 0.36778733134269714}, {"text": "\u00b7", "box": [0.8955564505302726, 0.3661139698875548, 0.020002684924150894, 0.009910425004764627], "conf": 0.40566352009773254}, {"text": "\u00b7\u00b7", "box": [0.1722378842797691, 0.3670668953687822, 0.09679151563968318, 0.0137221269296741], "conf": 0.35912299156188965}, {"text": "\u4e09\u4e001", "box": [0.0684655658477648, 0.37030684200495523, 0.09665726943213854, 0.024013722126929673], "conf": 0.3209955394268036}, {"text": "\u76ee", "box": [0.19022687609075042, 0.3821231179721746, 0.06752584239495234, 0.019439679817038306], "conf": 0.12742696702480316}, {"text": "\u5341\u4e8b", "box": [0.9246878775674587, 0.38307604345340196, 0.01449859041482078, 0.009338669716028206], "conf": 0.3679259419441223}, {"text": "\u00b7", "box": [0.8304470398711237, 0.3884124261482752, 0.08457511075312123, 0.010482180293501049], "conf": 0.36341404914855957}, {"text": "\uff1a\u679c\u978b", "box": [0.12954759028057458, 0.39165237278444825, 0.03691770707477514, 0.023441966838193252], "conf": 0.23935465514659882}, {"text": "1301300", "box": [0.3890455094643576, 0.40842386125404995, 0.07490938380990737, 0.01105393558223747], "conf": 0.19424311816692352}, {"text": "The", "box": [0.923479661699557, 0.40766152086906804, 0.0028594442207007654, 0.0823327615780446], "conf": 0.8215065002441406}, {"text": "SAAA", "box": [0.5882668814605987, 0.4114732227939775, 0.09571754597932608, 0.013912712025919573], "conf": 0.18506503105163574}, {"text": "AAA", "box": [0.2752047254665056, 0.4210024776062512, 0.07229158276278695, 0.015246807699637889], "conf": 0.18718019127845764}, {"text": "A", "box": [0.3474963082292925, 0.4210024776062512, 0.02409719425426232, 0.015246807699637889], "conf": 0.18718019127845764}, {"text": "HALRSASEENEA", "box": [0.17317760773258156, 0.4734133790737564, 0.0950463149416029, 0.01162569087097389], "conf": 0.16145434975624084}, {"text": "1009200.0", "box": [0.5007383541414955, 0.4854202401372213, 0.07477513760236273, 0.01219744615971031], "conf": 0.2284882366657257}, {"text": "CETRAASARASRR", "box": [0.588535373875688, 0.4865637507146941, 0.0965230232245939, 0.012769201448446732], "conf": 0.17037343978881836}, {"text": "Times", "box": [0.9240166465297356, 0.4875166761959215, 0.008726003490401396, 0.039832285115303984], "conf": 0.9813706278800964}, {"text": "\uff1a\u91cc\u00b7", "box": [0.4352262048597127, 0.501810558414332, 0.041750570546382065, 0.013150371640937679], "conf": 0.26475468277931213}, {"text": "ANAAAAN", "box": [0.492415089273728, 0.5096245473603964, 0.07584910726271983, 0.012388031255955785], "conf": 0.16097770631313324}, {"text": "AA", "box": [0.3801852597664116, 0.5134362492853058, 0.09638877701704927, 0.013150371640937679], "conf": 0.1403728574514389}, {"text": "\u00b7", "box": [0.5132232514431467, 0.5208690680388793, 0.06859981205530943, 0.013340956737183152], "conf": 0.24185580015182495}, {"text": "\u00b7", "box": [0.38703181635118805, 0.5254431103487708, 0.08927372801718352, 0.014103297122165046], "conf": 0.2858355939388275}, {"text": "5552025002", "box": [0.5867901731776077, 0.5290642271774347, 0.09692576184722781, 0.012769201448446732], "conf": 0.21418440341949463}, {"text": "1", "box": [0.9240166465297356, 0.5336382694873261, 0.0004975006514889484, 0.0952925481227368], "conf": 0.9539061784744263}, {"text": "Street", "box": [0.929489153696114, 0.5336382694873261, 0.00298500390893369, 0.0952925481227368], "conf": 0.9539061784744263}, {"text": "\u4e13", "box": [0.06873405826285407, 0.5460263007432818, 0.09732850046986173, 0.02115494568324757], "conf": 0.037871409207582474}, {"text": "A", "box": [0.17277486910994763, 0.5464074709357728, 0.09571754597932608, 0.01219744615971031], "conf": 0.14261819422245026}, {"text": "\u00b7", "box": [0.1722378842797691, 0.5582237469029921, 0.09558329977178144, 0.013531541833428626], "conf": 0.5069242715835571}, {"text": "\u8f66", "box": [0.06873405826285407, 0.566990661330284, 0.097596992884951, 0.022870211549456832], "conf": 0.0884079858660698}, {"text": "\u5e02", "box": [0.17170089944959055, 0.5824280541261674, 0.09101892871526379, 0.012769201448446732], "conf": 0.08853647857904434}, {"text": "SNOATSTNAGE", "box": [0.1809638877701705, 0.5959595959595959, 0.08658880386629078, 0.010863350485991996], "conf": 0.16478727757930756}, {"text": "A", "box": [0.48570277889649616, 0.6192109777015438, 0.09450933011142436, 0.01219744615971031], "conf": 0.14400920271873474}, {"text": "Vancouver,", "box": [0.9245536313599141, 0.6260720411663808, 0.0036917707074775137, 0.11225462168858395], "conf": 0.8479197025299072}, {"text": "Canadd", "box": [0.9297221103503825, 0.6260720411663808, 0.0022150624244865087, 0.11225462168858395], "conf": 0.8479197025299072}, {"text": "20520550850", "box": [0.27614444891931805, 0.6296931579950448, 0.09477782252651362, 0.018296169239565466], "conf": 0.14592868089675903}, {"text": "\u00b7", "box": [0.6912337226473352, 0.6434152849247189, 0.10498053429990603, 0.008576329331046312], "conf": 0.3471453785896301}, {"text": "\u00b7", "box": [0.18552825882668814, 0.6474175719458738, 0.08269566384749631, 0.01105393558223747], "conf": 0.4369993507862091}, {"text": "AA", "box": [0.3812592294267687, 0.6519916142557652, 0.09531480735669218, 0.013150371640937679], "conf": 0.14487619698047638}, {"text": "\uff1a", "box": [0.06819707343267553, 0.668000762340385, 0.09612028460196, 0.013531541833428626], "conf": 0.22427105903625488}, {"text": "\u8bf7", "box": [0.6004832863471606, 0.6836287402325139, 0.08282991005504095, 0.012769201448446732], "conf": 0.07936811447143555}, {"text": "\u4e2d", "box": [0.27668143374949655, 0.7036401753382886, 0.09450933011142436, 0.018105584143319992], "conf": 0.04961578920483589}, {"text": "Monday", "box": [0.9241508927372801, 0.7507146941109205, 0.00939723452812458, 0.038498189441585666], "conf": 0.9942097663879395}, {"text": "SSAES3", "box": [0.38850852463417906, 0.7669144272917858, 0.0884682507719157, 0.0137221269296741], "conf": 0.16820989549160004}, {"text": "\u00b7", "box": [0.10323533360182575, 0.7815894797026872, 0.0608135320177205, 0.012769201448446732], "conf": 0.30101898312568665}, {"text": "August", "box": [0.9246878775674587, 0.7922622450924338, 0.008591757282856759, 0.037354678864112825], "conf": 0.9919607639312744}, {"text": "5303100", "box": [0.6063901194791247, 0.7953116066323613, 0.07665458450798765, 0.012959786544692205], "conf": 0.1723518818616867}, {"text": "\u65b0", "box": [0.8614579138139348, 0.8021726700971984, 0.03624647603705195, 0.014865637507146942], "conf": 0.04641691967844963}, {"text": "\u00b7", "box": [0.48342059336823734, 0.8025538402896893, 0.09585179218687072, 0.013531541833428626], "conf": 0.270171195268631}, {"text": "\u00b7", "box": [0.6011545173848839, 0.8071278825995807, 0.08162169418713922, 0.013912712025919573], "conf": 0.23550261557102203}, {"text": "3", "box": [0.2844677137870855, 0.80884314846579, 0.09007920526245133, 0.016199733180865258], "conf": 0.10037142038345337}, {"text": "\u6b66\u6797\u5341\u4e09\u5947", "box": [0.8904550946435763, 0.8200876691442729, 0.019868438716606256, 0.12388031255955784], "conf": 0.9968667030334473}, {"text": "\u65b0\u6d3e\u6b66\u4fe0\u5c0f\u8aaa", "box": [0.9076386092092898, 0.823708785972937, 0.009665726943213854, 0.06880121974461598], "conf": 0.9503934383392334}, {"text": "\u00b7", "box": [0.5865216807625184, 0.8313321898227558, 0.09598603839441536, 0.01429388221841052], "conf": 0.2729966938495636}, {"text": "\u00b7", "box": [0.27668143374949655, 0.8340003811701925, 0.09692576184722781, 0.015437392795883362], "conf": 0.22678309679031372}, {"text": "111980", "box": [0.9246878775674587, 0.841052029731275, 0.010202711773392402, 0.048027444253859346], "conf": 0.9969239234924316}, {"text": "\u7535", "box": [0.27668143374949655, 0.8461978273299028, 0.09692576184722781, 0.015437392795883362], "conf": 0.04343137517571449}, {"text": "\uff1a33", "box": [0.27694992616458586, 0.8589670287783495, 0.09665726943213854, 0.01429388221841052], "conf": 0.1670011729001999}, {"text": "g", "box": [0.8265538998523292, 0.8888888888888888, 0.0076520338300443014, 0.013150371640937679], "conf": 0.7398481369018555}, {"text": "1", "box": [0.17452006980802792, 0.8980369735086716, 0.07920526245133575, 0.012769201448446732], "conf": 0.08863326162099838}, {"text": "\u7a97", "box": [0.7256007517787623, 0.898989898989899, 0.013021882131829777, 0.03449590242043072], "conf": 0.8603731393814087}, {"text": "\u6761\u6761", "box": [0.7435897435897436, 0.898608728797408, 0.014364344207276145, 0.03868877453783114], "conf": 0.6963889598846436}, {"text": "\u85dd\u6587", "box": [0.7842663444757686, 0.8970840480274442, 0.014364344207276145, 0.03868877453783114], "conf": 0.874420166015625}, {"text": "C.E", "box": [0.6482749362330514, 0.9020392605298265, 0.02752047254665056, 0.011244520678482943], "conf": 0.30840232968330383}, {"text": "Page", "box": [0.926030339642905, 0.9005145797598628, 0.007195596724392536, 0.03487707261292167], "conf": 0.914101779460907}, {"text": "4", "box": [0.9332259363672977, 0.9005145797598628, 0.0017988991810981335, 0.03487707261292167], "conf": 0.914101779460907}, {"text": "\u8af8\u845b\u9752\u96f2", "box": [0.8865619546247818, 0.9054697922622451, 0.005906833131964022, 0.03163712597674862], "conf": 0.8837564587593079}, {"text": "\u4e4b", "box": [0.7727211706269298, 0.9077568134171907, 0.012216404886561954, 0.01581856298837431], "conf": 0.1575610488653183}, {"text": "\u00b7", "box": [0.18002416431735804, 0.9100438345721364, 0.08900523560209424, 0.013340956737183152], "conf": 0.2007799744606018}, {"text": "330.0", "box": [0.28325949791918376, 0.9104250047646274, 0.08981071284736206, 0.013531541833428626], "conf": 0.19726288318634033}, {"text": "TERRA", "box": [0.5935024835548396, 0.9132837812083096, 0.04349577124446234, 0.01219744615971031], "conf": 0.13582012057304382}, {"text": "9", "box": [0.6902939991945227, 0.9129026110158186, 0.008457511075312122, 0.013912712025919573], "conf": 0.27862948179244995}, {"text": "NOSMAG", "box": [0.6337763458182306, 0.9151896321707642, 0.041750570546382065, 0.009910425004764627], "conf": 0.31258153915405273}, {"text": "\u00b7", "box": [0.1722378842797691, 0.9226224509243377, 0.0965230232245939, 0.013912712025919573], "conf": 0.19352351129055023}];
+  const pageWidth = 7449.0;
+  const pageHeight = 5247.0;
+  const itemName = "sfu.00001_19800811.4";
+  const collectionName = "Newspapers/sfu.00001_19800811";
+  const STORAGE_KEY = `crkn_adj_${itemName}`;
+
+  // SVGs & Sidebar
+  const svgLeft = document.getElementById("svgLeft");
+  const svgRight = document.getElementById("svgRight");
+  const sidebarList = document.getElementById("sidebarList");
+  const cards = [];
+
+  function escapeHtml(str) {
+    return (str || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  function formatVerdictLabel(v) {
+    if (v === "PADDLE_WIN") return `${pipelineShort} Win`;
+    if (v === "ABBYY_WIN") return "ABBYY Win";
+    if (v === "BOTH_VALID") return "Both Valid";
+    if (v === "NEITHER_VALID") return "Neither";
+    return v || "None";
+  }
+
+  function buildVerdictBadgeHTML(v, isManual) {
+    const star = isManual ? ' <span title="Manually Adjudicated">★</span>' : '';
+    const manCls = isManual ? ' manual' : '';
+    if (v === "PADDLE_WIN") {
+      return `<span class="verdict-tag paddle-win${manCls}">${pipelineShort} Win${star}</span>`;
+    } else if (v === "ABBYY_WIN") {
+      return `<span class="verdict-tag abbyy-win${manCls}">ABBYY Win${star}</span>`;
+    } else if (v === "BOTH_VALID") {
+      return `<span class="verdict-tag both-valid${manCls}">Both Valid${star}</span>`;
+    } else if (v === "NEITHER_VALID") {
+      return `<span class="verdict-tag neither-valid${manCls}">Neither${star}</span>`;
+    }
+    return '';
+  }
+
+  function loadAdjudicationsFromStorage() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      const map = JSON.parse(raw);
+      Object.keys(map).forEach(idxStr => {
+        const idx = parseInt(idxStr, 10);
+        if (matchedData[idx]) {
+          matchedData[idx].manual_verdict = map[idxStr];
+        }
+      });
+    } catch (e) {
+      console.warn("Failed to load adjudications from localStorage:", e);
+    }
+  }
+
+  function saveAdjudicationsToStorage() {
+    const map = {};
+    matchedData.forEach((m, idx) => {
+      if (m.manual_verdict) {
+        map[idx] = m.manual_verdict;
+      }
+    });
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(map));
+    } catch (e) {
+      console.warn("localStorage quota exceeded or unavailable:", e);
+    }
+  }
+
+  // Populate SVGs and Sidebar
+  loadAdjudicationsFromStorage();
+
+  // 1. Pipeline-only boxes (rendered in background)
+  pOnlyData.forEach((p, pIdx) => {
+    const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+    rect.setAttribute("x", p.box[0] * pageWidth);
+    rect.setAttribute("y", p.box[1] * pageHeight);
+    rect.setAttribute("width", p.box[2] * pageWidth);
+    rect.setAttribute("height", p.box[3] * pageHeight);
+    rect.setAttribute("class", "p-only");
+    rect.id = "p-only-rect-" + pIdx;
+    rect.innerHTML = `<title>Pipeline Only: "${escapeHtml(p.text)}"</title>`;
+    rect.onclick = (e) => { e.stopPropagation(); selectSingleBox("P", pIdx); };
+    svgLeft.appendChild(rect);
+  });
+
+  // 2. Benchmark-only boxes (rendered in background)
+  bOnlyData.forEach((b, bIdx) => {
+    const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+    rect.setAttribute("x", b.box[0] * pageWidth);
+    rect.setAttribute("y", b.box[1] * pageHeight);
+    rect.setAttribute("width", b.box[2] * pageWidth);
+    rect.setAttribute("height", b.box[3] * pageHeight);
+    rect.setAttribute("class", "b-only");
+    rect.id = "b-only-rect-" + bIdx;
+    rect.innerHTML = `<title>ABBYY Only: "${escapeHtml(b.text)}"</title>`;
+    rect.onclick = (e) => { e.stopPropagation(); selectSingleBox("B", bIdx); };
+    svgRight.appendChild(rect);
+  });
+
+  // 3. Matched Data (rendered on top so matched pairs always capture events)
+  matchedData.forEach((m, idx) => {
+    const isAgree = m.clean_match;
+    const cls = isAgree ? "agree" : "discrepancy";
+
+    // Left SVG
+    const rectL = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+    rectL.setAttribute("x", m.p_box[0] * pageWidth);
+    rectL.setAttribute("y", m.p_box[1] * pageHeight);
+    rectL.setAttribute("width", m.p_box[2] * pageWidth);
+    rectL.setAttribute("height", m.p_box[3] * pageHeight);
+    rectL.setAttribute("class", cls);
+    rectL.id = "p-rect-" + idx;
+    rectL.dataset.idx = idx;
+    rectL.innerHTML = `<title>Pipeline: "${m.p_text}" | ABBYY: "${m.b_text}" (IoU: ${m.iou})</title>`;
+    rectL.onclick = (e) => { e.stopPropagation(); selectWord(idx); };
+    svgLeft.appendChild(rectL);
+
+    // Right SVG
+    const rectR = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+    rectR.setAttribute("x", m.b_box[0] * pageWidth);
+    rectR.setAttribute("y", m.b_box[1] * pageHeight);
+    rectR.setAttribute("width", m.b_box[2] * pageWidth);
+    rectR.setAttribute("height", m.b_box[3] * pageHeight);
+    rectR.setAttribute("class", cls);
+    rectR.id = "b-rect-" + idx;
+    rectR.dataset.idx = idx;
+    rectR.innerHTML = `<title>ABBYY: "${m.b_text}" | Pipeline: "${m.p_text}" (IoU: ${m.iou})</title>`;
+    rectR.onclick = (e) => { e.stopPropagation(); selectWord(idx); };
+    svgRight.appendChild(rectR);
+
+    // Sidebar items for discrepancies
+    if (!isAgree) {
+      const card = document.createElement("div");
+      card.className = "card";
+      card.id = "card-" + idx;
+      const effVerdict = m.manual_verdict || m.lexical_verdict || "NONE";
+      card.dataset.verdict = effVerdict;
+
+      const pCheck = m.p_valid ? ' <span style="color:#3fb950;font-size:0.75rem;">✓</span>' : '';
+      const bCheck = m.b_valid ? ' <span style="color:#3fb950;font-size:0.75rem;">✓</span>' : '';
+
+      card.innerHTML = `
+        <div class="card-row">
+          <span class="card-diff" id="card-p-${idx}" title="Click to award ${pipelineShort} Win">P: ${escapeHtml(m.p_text)}${pCheck}</span>
+          <span id="badge-container-${idx}">${buildVerdictBadgeHTML(effVerdict, Boolean(m.manual_verdict))}</span>
+        </div>
+        <div class="card-row">
+          <span style="color:#ef4444;" id="card-b-${idx}" title="Click to award ABBYY Win">B: ${escapeHtml(m.b_text)}${bCheck}</span>
+          <span class="card-label">IoU: ${m.iou} | Sim: ${Math.round(m.sim * 100)}%</span>
+        </div>
+        <div class="card-quick-actions" id="chips-${idx}">
+          <button class="chip-btn chip-p ${effVerdict === 'PADDLE_WIN' ? 'active' : ''}" title="Award ${pipelineShort} Win" onclick="event.stopPropagation(); setWinner(${idx}, 'PADDLE_WIN');">P</button>
+          <button class="chip-btn chip-b ${effVerdict === 'ABBYY_WIN' ? 'active' : ''}" title="Award ABBYY Win" onclick="event.stopPropagation(); setWinner(${idx}, 'ABBYY_WIN');">B</button>
+          <button class="chip-btn chip-both ${effVerdict === 'BOTH_VALID' ? 'active' : ''}" title="Mark Both Valid" onclick="event.stopPropagation(); setWinner(${idx}, 'BOTH_VALID');">Both</button>
+          <button class="chip-btn chip-neither ${effVerdict === 'NEITHER_VALID' ? 'active' : ''}" title="Mark Neither Valid" onclick="event.stopPropagation(); setWinner(${idx}, 'NEITHER_VALID');">None</button>
+        </div>
+      `;
+      card.onclick = () => selectWord(idx);
+      
+      // Row clicks also set winner directly
+      const pSpan = card.querySelector(`#card-p-${idx}`);
+      if (pSpan) pSpan.onclick = (e) => { e.stopPropagation(); setWinner(idx, "PADDLE_WIN"); };
+      const bSpan = card.querySelector(`#card-b-${idx}`);
+      if (bSpan) bSpan.onclick = (e) => { e.stopPropagation(); setWinner(idx, "ABBYY_WIN"); };
+
+      sidebarList.appendChild(card);
+      cards.push({ idx: idx, el: card });
+    }
+  });
+
+  // Discrepancy filter
+  const selFilter = document.getElementById("selFilterDiscrepancies");
+  if (selFilter) {
+    selFilter.onchange = applyCurrentFilter;
+  }
+
+  function applyCurrentFilter() {
+    const val = selFilter ? selFilter.value : "all";
+    cards.forEach(c => {
+      const eff = c.el.dataset.verdict;
+      if (val === "all" || eff === val) {
+        c.el.style.display = "";
+      } else {
+        c.el.style.display = "none";
+      }
+    });
+  }
+
+  // Active word selection and highlighting
+  let activeIdx = null;
+
+  function selectWord(idx) {
+    document.querySelectorAll(".highlighted").forEach(el => el.classList.remove("highlighted"));
+    document.querySelectorAll(".card.active").forEach(el => el.classList.remove("active"));
+
+    activeIdx = idx;
+    const m = matchedData[idx];
+    if (!m) return;
+
+    // Highlight rects on both left and right canvases
+    const rL = document.getElementById("p-rect-" + idx);
+    const rR = document.getElementById("b-rect-" + idx);
+    if (rL) rL.classList.add("highlighted");
+    if (rR) rR.classList.add("highlighted");
+
+    // Highlight and scroll into view sidebar card if present
+    const cardEl = document.getElementById("card-" + idx);
+    if (cardEl) {
+      cardEl.classList.add("active");
+      cardEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+
+    renderInspector(idx);
+    zoomToNormBox(m.p_box);
+  }
+
+  function selectSingleBox(engine, idx) {
+    document.querySelectorAll(".highlighted").forEach(el => el.classList.remove("highlighted"));
+    document.querySelectorAll(".card.active").forEach(el => el.classList.remove("active"));
+    activeIdx = null;
+
+    if (engine === "P") {
+      const p = pOnlyData[idx];
+      if (!p) return;
+      const rect = document.getElementById("p-only-rect-" + idx);
+      if (rect) rect.classList.add("highlighted");
+      renderInspectorEngineOnly("P", p.text);
+      zoomToNormBox(p.box);
+    } else {
+      const b = bOnlyData[idx];
+      if (!b) return;
+      const rect = document.getElementById("b-only-rect-" + idx);
+      if (rect) rect.classList.add("highlighted");
+      renderInspectorEngineOnly("B", b.text);
+      zoomToNormBox(b.box);
+    }
+  }
+
+  function renderInspector(idx) {
+    const insp = document.getElementById("inspectorPanel");
+    if (!insp) return;
+
+    const m = matchedData[idx];
+    if (!m) {
+      insp.className = "inspector-panel empty";
+      insp.innerHTML = `
+        <div class="inspector-hint">
+          <span style="font-size:1.1rem;">🔍</span>
+          <span>Click any word box or card to select winner</span>
+        </div>
+      `;
+      return;
+    }
+
+    insp.className = "inspector-panel";
+    const effVerdict = m.manual_verdict || m.lexical_verdict || (m.clean_match ? "BOTH_VALID" : "NEITHER_VALID");
+    const isManual = Boolean(m.manual_verdict);
+
+    const pCheck = m.p_valid ? ' <span style="color:#3fb950;">✓</span>' : '';
+    const bCheck = m.b_valid ? ' <span style="color:#3fb950;">✓</span>' : '';
+
+    insp.innerHTML = `
+      <div class="inspector-header">
+        <div class="inspector-title">
+          <span>Adjudicate Winner</span>
+          <span class="inspector-metrics">IoU: ${m.iou} | Sim: ${Math.round(m.sim * 100)}%</span>
+        </div>
+        <div class="inspector-nav">
+          <button id="btnPrevDisc" title="Previous Word (Key: K / Up)">◀</button>
+          <button id="btnNextDisc" title="Next Word (Key: J / Down)">▶</button>
+        </div>
+      </div>
+      <div class="inspector-compare">
+        <div class="insp-row p-row" id="inspRowP" title="Click to award win to ${pipelineShort}">
+          <span class="insp-engine">Pipeline (P):</span>
+          <span class="insp-text">${escapeHtml(m.p_text)}${pCheck}</span>
+        </div>
+        <div class="insp-row b-row" id="inspRowB" title="Click to award win to ABBYY">
+          <span class="insp-engine">ABBYY (B):</span>
+          <span class="insp-text">${escapeHtml(m.b_text)}${bCheck}</span>
+        </div>
+      </div>
+      <div class="inspector-prompt">
+        <span>Who won this word?</span>
+        <span class="insp-status ${isManual ? 'manual' : ''}">
+          ${isManual ? '★ Manual: ' + formatVerdictLabel(effVerdict) : 'Auto: ' + formatVerdictLabel(effVerdict)}
+        </span>
+      </div>
+      <div class="inspector-actions">
+        <button class="adj-btn btn-paddle ${effVerdict === 'PADDLE_WIN' ? 'active' : ''}" id="btnAdjPaddle" title="Award win to ${pipelineShort} (Key: P or 1)">
+          <span>${pipelineShort} Win</span> <span class="adj-key">P</span>
+        </button>
+        <button class="adj-btn btn-abbyy ${effVerdict === 'ABBYY_WIN' ? 'active' : ''}" id="btnAdjAbbyy" title="Award win to ABBYY (Key: B or A or 2)">
+          <span>ABBYY Win</span> <span class="adj-key">B</span>
+        </button>
+        <button class="adj-btn btn-both ${effVerdict === 'BOTH_VALID' ? 'active' : ''}" id="btnAdjBoth" title="Both variants are valid (Key: T or 3)">
+          <span>Both Valid</span> <span class="adj-key">T</span>
+        </button>
+        <button class="adj-btn btn-neither ${effVerdict === 'NEITHER_VALID' ? 'active' : ''}" id="btnAdjNeither" title="Neither recognized properly (Key: N or 4)">
+          <span>Neither</span> <span class="adj-key">N</span>
+        </button>
+      </div>
+      <div class="inspector-footer">
+        <span>Keys: P / B / T / N | J / K: Next/Prev</span>
+        ${isManual ? `<button class="btn-reset-word" id="btnResetWord" title="Revert to auto dictionary decision">Reset to Auto</button>` : ''}
+      </div>
+    `;
+
+    document.getElementById("btnAdjPaddle").onclick = (e) => { e.stopPropagation(); setWinner(idx, "PADDLE_WIN"); };
+    document.getElementById("btnAdjAbbyy").onclick = (e) => { e.stopPropagation(); setWinner(idx, "ABBYY_WIN"); };
+    document.getElementById("btnAdjBoth").onclick = (e) => { e.stopPropagation(); setWinner(idx, "BOTH_VALID"); };
+    document.getElementById("btnAdjNeither").onclick = (e) => { e.stopPropagation(); setWinner(idx, "NEITHER_VALID"); };
+
+    document.getElementById("inspRowP").onclick = (e) => { e.stopPropagation(); setWinner(idx, "PADDLE_WIN"); };
+    document.getElementById("inspRowB").onclick = (e) => { e.stopPropagation(); setWinner(idx, "ABBYY_WIN"); };
+
+    const btnReset = document.getElementById("btnResetWord");
+    if (btnReset) {
+      btnReset.onclick = (e) => { e.stopPropagation(); resetWinner(idx); };
+    }
+
+    const btnPrev = document.getElementById("btnPrevDisc");
+    if (btnPrev) {
+      btnPrev.onclick = (e) => { e.stopPropagation(); navigateDiscrepancy(-1); };
+    }
+    const btnNext = document.getElementById("btnNextDisc");
+    if (btnNext) {
+      btnNext.onclick = (e) => { e.stopPropagation(); navigateDiscrepancy(1); };
+    }
+  }
+
+  function renderInspectorEngineOnly(engine, boxText) {
+    const insp = document.getElementById("inspectorPanel");
+    if (!insp) return;
+
+    insp.className = "inspector-panel";
+    const engineName = engine === "P" ? `Pipeline (${pipelineName})` : "Benchmark (ABBYY)";
+    const color = engine === "P" ? "#38bdf8" : "#ef4444";
+
+    insp.innerHTML = `
+      <div class="inspector-header">
+        <div class="inspector-title" style="color:${color};">
+          <span>${engineName} Only</span>
+        </div>
+      </div>
+      <div class="inspector-compare">
+        <div class="insp-row">
+          <span class="insp-engine" style="color:${color};">${engine === 'P' ? 'Pipeline:' : 'ABBYY:'}</span>
+          <span class="insp-text">${escapeHtml(boxText)}</span>
+        </div>
+      </div>
+      <div class="inspector-footer" style="padding-top:6px;font-style:italic;">
+        <span>Only one engine recognized this box (no rival box to adjudicate).</span>
+      </div>
+    `;
+  }
+
+  function setWinner(idx, winner) {
+    const m = matchedData[idx];
+    if (!m) return;
+
+    m.manual_verdict = winner;
+    saveAdjudicationsToStorage();
+    updateCardUI(idx);
+    renderInspector(idx);
+    recalculateSummaryStats();
+    applyCurrentFilter();
+  }
+
+  function resetWinner(idx) {
+    const m = matchedData[idx];
+    if (!m) return;
+
+    delete m.manual_verdict;
+    saveAdjudicationsToStorage();
+    updateCardUI(idx);
+    renderInspector(idx);
+    recalculateSummaryStats();
+    applyCurrentFilter();
+  }
+
+  function updateCardUI(idx) {
+    const m = matchedData[idx];
+    if (!m) return;
+
+    const effVerdict = m.manual_verdict || m.lexical_verdict || (m.clean_match ? "BOTH_VALID" : "NEITHER_VALID");
+    const isManual = Boolean(m.manual_verdict);
+
+    let cardEl = document.getElementById("card-" + idx);
+    if (!cardEl && m.manual_verdict && m.manual_verdict !== "BOTH_VALID") {
+      // Dynamically add card if user marked an agreed word as a discrepancy
+      cardEl = document.createElement("div");
+      cardEl.className = "card";
+      cardEl.id = "card-" + idx;
+      sidebarList.prepend(cardEl);
+      cards.unshift({ idx: idx, el: cardEl });
+      cardEl.onclick = () => selectWord(idx);
+    }
+
+    if (cardEl) {
+      cardEl.dataset.verdict = effVerdict;
+      const badgeContainer = document.getElementById("badge-container-" + idx);
+      if (badgeContainer) {
+        badgeContainer.innerHTML = buildVerdictBadgeHTML(effVerdict, isManual);
+      }
+      const chips = document.getElementById("chips-" + idx);
+      if (chips) {
+        chips.innerHTML = `
+          <button class="chip-btn chip-p ${effVerdict === 'PADDLE_WIN' ? 'active' : ''}" title="Award ${pipelineShort} Win" onclick="event.stopPropagation(); setWinner(${idx}, 'PADDLE_WIN');">P</button>
+          <button class="chip-btn chip-b ${effVerdict === 'ABBYY_WIN' ? 'active' : ''}" title="Award ABBYY Win" onclick="event.stopPropagation(); setWinner(${idx}, 'ABBYY_WIN');">B</button>
+          <button class="chip-btn chip-both ${effVerdict === 'BOTH_VALID' ? 'active' : ''}" title="Mark Both Valid" onclick="event.stopPropagation(); setWinner(${idx}, 'BOTH_VALID');">Both</button>
+          <button class="chip-btn chip-neither ${effVerdict === 'NEITHER_VALID' ? 'active' : ''}" title="Mark Neither Valid" onclick="event.stopPropagation(); setWinner(${idx}, 'NEITHER_VALID');">None</button>
+        `;
+      }
+    }
+  }
+
+  function recalculateSummaryStats() {
+    let pWins = 0;
+    let bWins = 0;
+    let bothValid = 0;
+    let neitherValid = 0;
+    let totalDiscrepancies = 0;
+    let manualCount = 0;
+
+    matchedData.forEach(m => {
+      const isDisc = !m.clean_match || (m.manual_verdict && m.manual_verdict !== "BOTH_VALID");
+      const eff = m.manual_verdict || m.lexical_verdict || (m.clean_match ? "BOTH_VALID" : "NEITHER_VALID");
+      if (m.manual_verdict) manualCount++;
+
+      if (isDisc) {
+        totalDiscrepancies++;
+        if (eff === "PADDLE_WIN") pWins++;
+        else if (eff === "ABBYY_WIN") bWins++;
+        else if (eff === "BOTH_VALID") bothValid++;
+        else if (eff === "NEITHER_VALID") neitherValid++;
+      }
+    });
+
+    const decisive = pWins + bWins;
+    const winRate = decisive > 0 ? ((pWins / decisive) * 100).toFixed(2) : "50.00";
+
+    const badgeQa = document.getElementById("badgeQaWinRate");
+    if (badgeQa) {
+      badgeQa.textContent = `${pipelineShort} QA Win Rate: ${winRate}%`;
+      badgeQa.title = `${pipelineShort} ${pWins} wins vs ABBYY ${bWins} wins on disputed words (${manualCount} manual reviews)`;
+      badgeQa.className = `badge ${parseFloat(winRate) >= 50.0 ? "qa-win" : "qa-loss"}`;
+    }
+
+    const badgeDiffs = document.getElementById("badgeSidebarDiffCount");
+    if (badgeDiffs) badgeDiffs.textContent = totalDiscrepancies;
+    const badgeTopDiffs = document.getElementById("badgeTopDiffs");
+    if (badgeTopDiffs) badgeTopDiffs.textContent = `Diffs: ${totalDiscrepancies}`;
+
+    const optAll = document.getElementById("optFilterAll");
+    const optP = document.getElementById("optFilterPaddle");
+    const optB = document.getElementById("optFilterAbbyy");
+    const optBoth = document.getElementById("optFilterBoth");
+    const optNeither = document.getElementById("optFilterNeither");
+    if (optAll) optAll.textContent = `All Discrepancies (${totalDiscrepancies})`;
+    if (optP) optP.textContent = `${pipelineShort} Wins (${pWins})`;
+    if (optB) optB.textContent = `ABBYY Wins (${bWins})`;
+    if (optBoth) optBoth.textContent = `Both Valid (${bothValid})`;
+    if (optNeither) optNeither.textContent = `Neither Valid (${neitherValid})`;
+
+    const lblManual = document.getElementById("lblManualCount");
+    if (lblManual) {
+      if (manualCount > 0) {
+        lblManual.textContent = `(${manualCount} manual)`;
+        lblManual.style.display = "inline";
+      } else {
+        lblManual.style.display = "none";
+      }
+    }
+  }
+
+  function navigateDiscrepancy(direction) {
+    if (cards.length === 0) return;
+    let currCardIndex = cards.findIndex(c => c.idx === activeIdx);
+    if (currCardIndex === -1) {
+      currCardIndex = direction > 0 ? -1 : cards.length;
+    }
+    let nextCardIndex = currCardIndex + direction;
+    if (nextCardIndex >= 0 && nextCardIndex < cards.length) {
+      selectWord(cards[nextCardIndex].idx);
+    }
+  }
+
+  function exportAdjudications() {
+    const overrides = [];
+    matchedData.forEach((m, idx) => {
+      if (m.manual_verdict) {
+        overrides.push({
+          idx: idx,
+          p_text: m.p_text,
+          b_text: m.b_text,
+          p_box: m.p_box,
+          b_box: m.b_box,
+          iou: m.iou,
+          original_verdict: m.lexical_verdict,
+          adjudicated_verdict: m.manual_verdict,
+        });
+      }
+    });
+
+    const payload = {
+      item_name: itemName,
+      collection: collectionName,
+      exported_at: new Date().toISOString(),
+      total_manual_adjudications: overrides.length,
+      overrides: overrides,
+    };
+
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${itemName}_adjudications.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  const btnExport = document.getElementById("btnExportAdjudications");
+  if (btnExport) {
+    btnExport.onclick = exportAdjudications;
+  }
+
+  const btnImport = document.getElementById("btnImportAdjudications");
+  const fileInput = document.getElementById("fileImportAdjudications");
+  if (btnImport && fileInput) {
+    btnImport.onclick = () => fileInput.click();
+    fileInput.onchange = (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        try {
+          const parsed = JSON.parse(evt.target.result);
+          let loaded = 0;
+          const overrides = Array.isArray(parsed.overrides)
+            ? parsed.overrides
+            : (Array.isArray(parsed.adjudications) ? parsed.adjudications : null);
+
+          if (overrides) {
+            overrides.forEach(entry => {
+              const idx = typeof entry.idx === "number" ? entry.idx : parseInt(entry.idx, 10);
+              const verdict = entry.adjudicated_verdict || entry.verdict;
+              if (!isNaN(idx) && verdict && matchedData[idx]) {
+                matchedData[idx].manual_verdict = verdict;
+                updateWordCard(idx);
+                loaded++;
+              }
+            });
+          } else if (typeof parsed === "object" && parsed !== null) {
+            Object.keys(parsed).forEach(k => {
+              const idx = parseInt(k, 10);
+              if (!isNaN(idx) && matchedData[idx] && typeof parsed[k] === "string") {
+                matchedData[idx].manual_verdict = parsed[k];
+                updateWordCard(idx);
+                loaded++;
+              }
+            });
+          }
+
+          if (loaded > 0) {
+            saveAdjudicationsToStorage();
+            recalculateSummaryStats();
+            applyCurrentFilter();
+            if (activeIdx !== null) renderInspector(activeIdx);
+            alert(`Successfully imported ${loaded} manual adjudications!`);
+          } else {
+            alert("No matching adjudications found in the imported JSON file for this page.");
+          }
+        } catch (err) {
+          alert("Error parsing adjudications JSON file: " + err.message);
+        }
+        fileInput.value = "";
+      };
+      reader.readAsText(file);
+    };
+  }
+
+  // Keyboard navigation and winner selection
+  window.addEventListener("keydown", (e) => {
+    if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA" || e.target.tagName === "SELECT") return;
+
+    if (activeIdx !== null && matchedData[activeIdx]) {
+      const key = e.key.toUpperCase();
+      if (key === "P" || key === "1") {
+        e.preventDefault();
+        setWinner(activeIdx, "PADDLE_WIN");
+      } else if (key === "B" || key === "A" || key === "2") {
+        e.preventDefault();
+        setWinner(activeIdx, "ABBYY_WIN");
+      } else if (key === "T" || key === "3") {
+        e.preventDefault();
+        setWinner(activeIdx, "BOTH_VALID");
+      } else if (key === "N" || key === "4") {
+        e.preventDefault();
+        setWinner(activeIdx, "NEITHER_VALID");
+      } else if (key === "R") {
+        e.preventDefault();
+        resetWinner(activeIdx);
+      }
+    }
+
+    if (e.key === "ArrowDown" || e.key.toUpperCase() === "J") {
+      e.preventDefault();
+      navigateDiscrepancy(1);
+    } else if (e.key === "ArrowUp" || e.key.toUpperCase() === "K") {
+      e.preventDefault();
+      navigateDiscrepancy(-1);
+    }
+  });
+
+  // Synchronized Pan & Zoom
+  let scale = 1.0;
+  let panX = 0;
+  let panY = 0;
+  let isDragging = false;
+  let startX = 0;
+  let startY = 0;
+
+  const stageLeft = document.getElementById("stageLeft");
+  const stageRight = document.getElementById("stageRight");
+  const panelLeft = document.getElementById("panelLeft");
+  const panelRight = document.getElementById("panelRight");
+
+  function updateTransform() {
+    const transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
+    stageLeft.style.transform = transform;
+    stageRight.style.transform = transform;
+  }
+
+  function attachPanZoom(panel) {
+    panel.addEventListener("mousedown", e => {
+      isDragging = true;
+      startX = e.clientX - panX;
+      startY = e.clientY - panY;
+    });
+
+    window.addEventListener("mousemove", e => {
+      if (!isDragging) return;
+      panX = e.clientX - startX;
+      panY = e.clientY - startY;
+      updateTransform();
+    });
+
+    window.addEventListener("mouseup", () => {
+      isDragging = false;
+    });
+
+    panel.addEventListener("wheel", e => {
+      e.preventDefault();
+      const zoomFactor = e.deltaY < 0 ? 1.15 : 0.85;
+      const newScale = Math.min(Math.max(scale * zoomFactor, 0.4), 10.0);
+      
+      const rect = panel.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+
+      panX = mouseX - (mouseX - panX) * (newScale / scale);
+      panY = mouseY - (mouseY - panY) * (newScale / scale);
+      scale = newScale;
+      updateTransform();
+    }, { passive: false });
+  }
+
+  attachPanZoom(panelLeft);
+  attachPanZoom(panelRight);
+
+  function fitToView() {
+    const rect = panelLeft.getBoundingClientRect();
+    const panelW = (rect && rect.width > 0) ? rect.width : (panelLeft.clientWidth || 800);
+    const panelH = (rect && rect.height > 0) ? rect.height : (panelLeft.clientHeight || 700);
+
+    // Safe margins (24px) so neither height nor width is ever clipped by window edges
+    const padX = 24;
+    const padY = 24;
+    const availW = Math.max(50, panelW - padX);
+    const availH = Math.max(50, panelH - padY);
+
+    scale = Math.min(availW / pageWidth, availH / pageHeight);
+    panX = (panelW - pageWidth * scale) / 2;
+    panY = (panelH - pageHeight * scale) / 2;
+    updateTransform();
+  }
+
+  // Initial fit on load - starts out fully zoomed out
+  fitToView();
+  window.addEventListener("load", fitToView);
+  window.addEventListener("resize", fitToView);
+  setTimeout(fitToView, 50);
+  setTimeout(fitToView, 250);
+
+  document.getElementById("btnResetView").onclick = () => {
+    fitToView();
+    document.querySelectorAll(".highlighted").forEach(el => el.classList.remove("highlighted"));
+    document.querySelectorAll(".card.active").forEach(el => el.classList.remove("active"));
+    activeIdx = null;
+    const insp = document.getElementById("inspectorPanel");
+    if (insp) {
+      insp.className = "inspector-panel empty";
+      insp.innerHTML = `
+        <div class="inspector-hint">
+          <span style="font-size:1.1rem;">🔍</span>
+          <span>Click any word box or card to select winner</span>
+        </div>
+      `;
+    }
+  };
+
+  function zoomToNormBox(box) {
+    scale = 3.5;
+    const panelW = panelLeft.clientWidth;
+    const panelH = panelLeft.clientHeight;
+    const boxCenterX = (box[0] + (box[2] / 2.0)) * pageWidth;
+    const boxCenterY = (box[1] + (box[3] / 2.0)) * pageHeight;
+
+    panX = (panelW / 2.0) - (boxCenterX * scale);
+    panY = (panelH / 2.0) - (boxCenterY * scale);
+    updateTransform();
+  }
+
+  // Layer Toggles
+  document.getElementById("chkAgree").onchange = (e) => {
+    document.querySelectorAll(".agree").forEach(r => r.style.display = e.target.checked ? "" : "none");
+  };
+  document.getElementById("chkDiff").onchange = (e) => {
+    document.querySelectorAll(".discrepancy").forEach(r => r.style.display = e.target.checked ? "" : "none");
+  };
+  document.getElementById("chkOnly").onchange = (e) => {
+    document.querySelectorAll(".p-only, .b-only").forEach(r => r.style.display = e.target.checked ? "" : "none");
+  };
+
+  // Background Image Toggle & Opacity Slider
+  const chkBgImage = document.getElementById("chkBgImage");
+  const rngOpacity = document.getElementById("rngOpacity");
+  const lblOpacity = document.getElementById("lblOpacity");
+
+  function updateBgImageStyle() {
+    const show = chkBgImage.checked;
+    const op = rngOpacity.value / 100.0;
+    lblOpacity.textContent = rngOpacity.value + "%";
+
+    document.querySelectorAll(".page-image").forEach(img => {
+      img.style.display = show ? "block" : "none";
+      img.style.opacity = op;
+    });
+  }
+
+  chkBgImage.onchange = updateBgImageStyle;
+  rngOpacity.oninput = updateBgImageStyle;
+
+  // Initialize summary stats on load and stay fully zoomed out (no auto-zoom into boxes)
+  recalculateSummaryStats();
+  fitToView();
+</script>
+</body>
+</html>
