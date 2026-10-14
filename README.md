@@ -118,3 +118,4 @@ OCR-Indra-Dashboard/
 | **Archival Microfilm & Census Records** | **Paddle PP-OCRv6** | Adaptive CLAHE pre-processing, stroke reconnection, and higher recognition accuracy on degraded ink. |
 | **High-Volume Newspaper Broadsheets** | **Paddle + 3×2 Tiling** | Superior multi-column layout parsing and micro-print resolution on 8-column broadsheets. |
 | **Rapid Searchable PDF Triage** | **Indra OCR** | Fast conversion from scanned image to ALTO XML and searchable PDF/A with minimal resource footprint. |
+
